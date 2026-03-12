@@ -11,7 +11,11 @@
       "Bash(curl -s http://localhost:5173/api/users 2>&1 | head -5)",
       "Bash(node server.js)",
       "Bash(sleep 2 && curl -s http://localhost:3002/api/users | head -1)",
-      "Bash(sleep 1 && curl -s http://localhost:3002/api/users 2>&1 | head -1)"
+      "Bash(sleep 1 && curl -s http://localhost:3002/api/users 2>&1 | head -1)",
+      "Bash(cd \"C:\\\\Users\\\\mandy\\\\OneDrive - SOCIEDADE BRASILEIRA CAMINHO DE DAMASCO\\\\Apps\\\\Kanbanapp\" && npm run build 2>&1 | head -30)",
+      "Bash(curl -s http://localhost:3002/api/projects 2>&1)",
+      "Bash(curl -s http://localhost:5173/api/projects 2>&1)",
+      "Bash(curl -s http://localhost:5173 2>&1 | head -5)"
     ]
   }
 }

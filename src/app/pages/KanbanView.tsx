@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { Button } from '../components/ui/button';
 import { KanbanBoard } from '../components/KanbanBoard';
-import { DndProvider } from 'react-dnd';
+import { DndProvider, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { TaskModal } from '../components/TaskModal';
 import { ConnectionGraph } from '../components/ConnectionGraph';
@@ -181,6 +181,21 @@ export default function KanbanView() {
       setBoardKey(prev => prev + 1);
     } catch (error) {
       toast.error('Erro ao remover projeto');
+    }
+  };
+
+  // Move task to a specific project (for drag & drop from "no-project" to projects)
+  const moveTaskToProject = async (taskId: string, projectId: string) => {
+    try {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      const updatedTask = { ...task, projectId };
+      await taskService.saveTask(updatedTask);
+      toast.success('Tarefa movida para o projeto!');
+      setBoardKey(prev => prev + 1);
+    } catch (error) {
+      toast.error('Erro ao mover tarefa');
     }
   };
 
@@ -390,35 +405,65 @@ export default function KanbanView() {
           {selectedProjectId === 'all' ? (
             <>
               {projects.length > 0 ? (
-                projects.map(p => (
-                  <div key={p.id} className="space-y-4">
-                    <div className="flex items-center gap-4 px-2">
-                      <div className="h-3 w-3 rounded-full" style={{ backgroundColor: p.color || sector.color }} />
-                      <div className="flex flex-col">
-                        <h2 className="text-lg font-black uppercase tracking-widest opacity-60 italic">{p.name}</h2>
-                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground/40 font-bold uppercase tracking-tighter">
-                          <span>Criado por {users.find(u => String(u.id) === String(p.createdBy))?.name || 'Sistema'}</span>
-                          <span>•</span>
-                          <span>{new Date(p.createdAt).toLocaleDateString('pt-BR')} {new Date(p.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                projects.map(p => {
+                  // Componente de header de projeto com drop
+                  const ProjectHeader = ({ project }: { project: typeof p }) => {
+                    const [{ isOver }, drop] = useDrop({
+                      accept: 'TASK',
+                      drop: (item: { id: string; projectId?: string }) => {
+                        // Só permite drop se a tarefa for avulsa (projectId undefined ou null)
+                        if (!item.projectId) {
+                          moveTaskToProject(item.id, project.id);
+                        }
+                      },
+                      collect: (monitor) => ({
+                        isOver: monitor.isOver(),
+                      }),
+                    });
+
+                    return (
+                      <div
+                        ref={drop}
+                        className={`flex items-center gap-4 px-2 py-2 rounded-xl transition-all cursor-pointer ${isOver ? 'bg-primary/20 border border-primary/30' : ''}`}
+                        onClick={() => setSelectedProjectId(project.id)}
+                        title="Arraste tarefas avulsas aqui para movê-las para este projeto"
+                      >
+                        <div className="h-3 w-3 rounded-full" style={{ backgroundColor: project.color || sector.color }} />
+                        <div className="flex flex-col">
+                          <h2 className="text-lg font-black uppercase tracking-widest opacity-60 italic">{project.name}</h2>
+                          <div className="flex items-center gap-2 text-[10px] text-muted-foreground/40 font-bold uppercase tracking-tighter">
+                            <span>Criado por {users.find(u => String(u.id) === String(project.createdBy))?.name || 'Sistema'}</span>
+                            <span>•</span>
+                            <span>{new Date(project.createdAt).toLocaleDateString('pt-BR')} {new Date(project.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                          </div>
                         </div>
+                        <div className="flex-1 h-px bg-white/5" />
+                        {isOver && (
+                          <span className="text-xs font-bold text-primary animate-pulse">Solte para mover</span>
+                        )}
                       </div>
-                      <div className="flex-1 h-px bg-white/5" />
+                    );
+                  };
+
+                  return (
+                    <div key={p.id} className="space-y-4">
+                      <ProjectHeader project={p} />
+                      <div className="bg-white/[0.01] border border-white/5 rounded-[2rem] p-6 shadow-3xl">
+                        <KanbanBoard
+                          key={`${boardKey}-${p.id}`}
+                          sectorId={sectorId!}
+                          projectId={p.id}
+                          onEditTask={handleEditTask}
+                          onViewConnections={handleViewConnections}
+                          onAddTask={handleCreateTask}
+                          userId={currentUser.id}
+                          userRole={currentUser.role}
+                          showConnections={showConnections}
+                        />
+                      </div>
                     </div>
-                    <div className="bg-white/[0.01] border border-white/5 rounded-[2rem] p-6 shadow-3xl">
-                      <KanbanBoard
-                        key={`${boardKey}-${p.id}`}
-                        sectorId={sectorId!}
-                        projectId={p.id}
-                        onEditTask={handleEditTask}
-                        onViewConnections={handleViewConnections}
-                        onAddTask={handleCreateTask}
-                        userId={currentUser.id}
-                        userRole={currentUser.role}
-                        showConnections={showConnections}
-                      />
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <div className="text-center py-20 opacity-30">
                   <FolderKanban className="h-12 w-12 mx-auto mb-4" />
@@ -426,12 +471,15 @@ export default function KanbanView() {
                 </div>
               )}
 
-              {/* Tarefas sem projeto */}
-              <div className="space-y-4 opacity-50">
+              {/* Tarefas sem projeto - removida a opacity para permitir drag */}
+              <div className="space-y-4">
                 <div className="flex items-center gap-4 px-2">
                   <div className="h-3 w-3 rounded-full bg-muted-foreground/30" />
                   <h2 className="text-lg font-black uppercase tracking-widest">Tarefas Avulsas</h2>
                   <div className="flex-1 h-px bg-white/5" />
+                  <span className="text-[10px] text-muted-foreground/60 font-bold uppercase">
+                    Arraste para um projeto acima
+                  </span>
                 </div>
                 <div className="bg-white/[0.01] border border-white/5 rounded-[2rem] p-6 shadow-3xl">
                   <KanbanBoard
