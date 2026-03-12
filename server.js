@@ -393,8 +393,12 @@ app.get('/api/linkedin-avatar', async (req, res) => {
     return res.status(404).json({ error: 'Avatar não encontrado' });
 });
 
-app.listen(port, () => {
+// Exportar para Vercel
+export default app;
 
-    console.log(`\n🚀 Backend Kanban rodando em http://localhost:${port}`);
-    console.log(`📁 Banco de dados: ${join(__dirname, 'db', 'kanban.db')}\n`);
-});
+if (!process.env.VERCEL) {
+    app.listen(port, () => {
+        console.log(`\n🚀 Backend Kanban rodando em http://localhost:${port}`);
+        console.log(`📁 Banco de dados: ${join(__dirname, 'db', 'kanban.db')}\n`);
+    });
+}
