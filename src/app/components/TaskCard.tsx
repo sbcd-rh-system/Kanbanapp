@@ -118,6 +118,11 @@ export function TaskCard({ task, onEdit, onDelete, onViewConnections }: TaskCard
             </div>
 
             <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1 text-[10px] text-muted-foreground/50 italic mr-auto">
+                <span>Por: {getUserById(task.createdBy)?.name.split(' ')[0] || 'Sistema'}</span>
+                <span>•</span>
+                <span>{new Date(task.createdAt).toLocaleDateString('pt-BR')} {new Date(task.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
               {task.connections.length > 0 && (
                 <div
                   className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-bold"

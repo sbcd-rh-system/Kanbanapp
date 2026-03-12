@@ -9,7 +9,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
-import { Task, SectorId, TaskStatus, User } from '../types';
+import { Task, SectorId, TaskStatus, User, Project } from '../types';
 import { taskService } from '../services/taskService';
 import {
   Select,
@@ -32,9 +32,10 @@ interface TaskModalProps {
   task?: Task;
   sectorId: SectorId;
   users: User[];
+  projects?: Project[];
 }
 
-export function TaskModal({ open, onClose, onSave, task, sectorId, users }: TaskModalProps) {
+export function TaskModal({ open, onClose, onSave, task, sectorId, users, projects = [] }: TaskModalProps) {
   const currentUser = getCurrentUser();
   const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [title, setTitle] = useState('');
@@ -51,6 +52,9 @@ export function TaskModal({ open, onClose, onSave, task, sectorId, users }: Task
   const [newComment, setNewComment] = useState('');
   const [connectionSearch, setConnectionSearch] = useState('');
   const [connectionSearchOpen, setConnectionSearchOpen] = useState(false);
+  const [userSearch, setUserSearch] = useState('');
+  const [userSearchOpen, setUserSearchOpen] = useState(false);
+  const [projectId, setProjectId] = useState<string | undefined>();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const applyFormatting = (format: string) => {
@@ -100,6 +104,7 @@ export function TaskModal({ open, onClose, onSave, task, sectorId, users }: Task
       setSelectedConnections(task.connections || []);
       setPoints(task.points || 0);
       setPriority(task.priority || 'medium');
+      setProjectId(task.projectId);
     } else {
       setTitle('');
       setDescription('');
@@ -111,6 +116,7 @@ export function TaskModal({ open, onClose, onSave, task, sectorId, users }: Task
       setSelectedConnections([]);
       setPoints(0);
       setPriority('medium');
+      setProjectId(undefined);
     }
   }, [task, open]);
 
@@ -121,6 +127,16 @@ export function TaskModal({ open, onClose, onSave, task, sectorId, users }: Task
   const filteredAvailableTasks = availableTasks.filter(
     t => !selectedConnections.includes(t.id) &&
       (connectionSearch === '' || t.title.toLowerCase().includes(connectionSearch.toLowerCase()))
+  );
+
+  const filteredUsers = users.filter(
+    u => !assignedTo.includes(u.id) &&
+      (userSearch === '' || u.name.toLowerCase().includes(userSearch.toLowerCase()))
+  );
+
+  const filteredAvailableUsers = users.filter(
+    u => !assignedTo.includes(u.id) &&
+      (userSearch === '' || u.name.toLowerCase().includes(userSearch.toLowerCase()))
   );
 
   const handleSave = () => {
@@ -136,6 +152,7 @@ export function TaskModal({ open, onClose, onSave, task, sectorId, users }: Task
       sectorId,
       points,
       priority,
+      projectId,
     };
 
     onSave(taskData);
@@ -184,7 +201,9 @@ export function TaskModal({ open, onClose, onSave, task, sectorId, users }: Task
               />
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-widest border-primary/20 bg-primary/5 text-primary">História de Usuário</Badge>
-                <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold opacity-40">Criado em {task ? new Date(task.createdAt).toLocaleDateString() : 'Hoje'}</span>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold opacity-40">
+                  Criado por {users.find(u => u.id === task?.createdBy)?.name || 'Sistema'} em {task ? `${new Date(task.createdAt).toLocaleDateString()} ${new Date(task.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : 'Hoje'}
+                </span>
               </div>
             </div>
           </div>
@@ -294,7 +313,7 @@ export function TaskModal({ open, onClose, onSave, task, sectorId, users }: Task
                               >
                                 <div className="w-1.5 h-1.5 rounded-full bg-primary/60 flex-shrink-0" />
                                 <span className="font-bold flex-1 truncate">{t.title}</span>
-                                <span className="text-muted-foreground/40 uppercase text-[9px] tracking-widest flex-shrink-0">{t.status.replace('-',' ')}</span>
+                                <span className="text-muted-foreground/40 uppercase text-[9px] tracking-widest flex-shrink-0">{t.status.replace('-', ' ')}</span>
                               </button>
                             ))}
                           </div>
@@ -309,7 +328,7 @@ export function TaskModal({ open, onClose, onSave, task, sectorId, users }: Task
                             <div key={cid} className="flex items-center gap-3 bg-white/5 px-4 py-2.5 rounded-xl border border-white/5 hover:bg-white/10 hover:border-white/10 transition-all group">
                               <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-lg shadow-primary/50 flex-shrink-0" />
                               <span className="text-xs font-bold flex-1 truncate">{ct.title}</span>
-                              <span className="text-[9px] text-muted-foreground/40 uppercase tracking-widest flex-shrink-0">{ct.status.replace('-',' ')}</span>
+                              <span className="text-[9px] text-muted-foreground/40 uppercase tracking-widest flex-shrink-0">{ct.status.replace('-', ' ')}</span>
                               <button
                                 className="opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-all"
                                 onClick={(e) => { e.stopPropagation(); toggleConnection(cid); }}
@@ -409,6 +428,7 @@ export function TaskModal({ open, onClose, onSave, task, sectorId, users }: Task
                     {[
                       { label: 'Esforço (Story Points)', value: points, setter: setPoints, type: 'number' },
                       { label: 'Prioridade', value: priority, setter: setPriority, type: 'select' },
+                      { label: 'Projeto', value: projectId || 'Nenhum', type: 'project-select' },
                       { label: 'Setor Responsável', value: sectorId, type: 'text' },
                       { label: 'Vencimento', value: dueDate || 'Definir', type: 'date' },
                     ].map((item, idx) => (
@@ -439,6 +459,17 @@ export function TaskModal({ open, onClose, onSave, task, sectorId, users }: Task
                             value={dueDate}
                             onChange={e => setDueDate(e.target.value)}
                           />
+                        ) : item.type === 'project-select' ? (
+                          <select
+                            className="bg-transparent text-right text-xs font-black border-none outline-none focus:ring-0 uppercase tracking-tighter cursor-pointer text-primary"
+                            value={projectId || ''}
+                            onChange={e => setProjectId(e.target.value || undefined)}
+                          >
+                            <option value="">Nenhum</option>
+                            {projects.map(p => (
+                              <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                          </select>
                         ) : (
                           <span className="text-[10px] font-black uppercase tracking-widest text-primary">{item.value as string}</span>
                         )}
@@ -451,28 +482,64 @@ export function TaskModal({ open, onClose, onSave, task, sectorId, users }: Task
                 <div className="space-y-6">
                   <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Responsáveis</h4>
                   <div className="space-y-4">
-                    {assignedTo.map(uid => {
-                      const user = users.find(u => u.id === uid);
-                      return user ? (
-                        <div key={uid} className="flex items-center gap-4 group p-1 transition-all">
-                          <div className="relative">
-                            <UserAvatar name={user.name} avatar={user.avatar} size="md" className="rounded-xl ring-2 ring-white/5 transition-all group-hover:ring-primary/40" />
-                            <div className="absolute -bottom-1 -right-1 bg-green-500 w-3 h-3 rounded-full border-2 border-background" />
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-sm font-black text-foreground/90 leading-none mb-1">{user.name}</p>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50">{user.cargo || 'Membro'}</p>
-                          </div>
-                          <Button
-                            variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-all"
-                            onClick={() => toggleAssignee(uid)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
+                    {/* Search to add assignees */}
+                    <div className="relative">
+                      <input
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs font-bold outline-none focus:border-primary/40 transition-all placeholder:text-muted-foreground/30"
+                        placeholder="Buscar pessoa para atribuir..."
+                        value={userSearch}
+                        onChange={e => setUserSearch(e.target.value)}
+                        onFocus={() => setUserSearchOpen(true)}
+                        onBlur={() => setTimeout(() => setUserSearchOpen(false), 150)}
+                      />
+                      {userSearchOpen && filteredUsers.length > 0 && (
+                        <div className="absolute z-50 top-full mt-1 left-0 right-0 bg-zinc-900/95 backdrop-blur border border-white/10 rounded-xl shadow-2xl overflow-hidden max-h-48 overflow-y-auto">
+                          {filteredUsers.map(u => (
+                            <button
+                              key={u.id}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-white/10 transition-all text-xs group"
+                              onMouseDown={() => { toggleAssignee(u.id); setUserSearch(''); }}
+                            >
+                              <UserAvatar name={u.name} avatar={u.avatar} size="sm" className="rounded-lg" />
+                              <span className="font-bold flex-1 truncate">{u.name}</span>
+                              <span className="text-muted-foreground/40 uppercase text-[9px] tracking-widest flex-shrink-0">{u.cargo || 'Membro'}</span>
+                            </button>
+                          ))}
                         </div>
-                      ) : null;
-                    })}
-                    <Button variant="ghost" className="w-full justify-center h-14 rounded-2xl hover:bg-white/10 border-2 border-dashed border-white/5 gap-3 text-xs font-black uppercase tracking-widest text-muted-foreground/60 hover:text-primary hover:border-primary/20 transition-all active:scale-95 shadow-lg shadow-black/20" onClick={() => { }}>
+                      )}
+                    </div>
+
+                    {/* Assigned users list */}
+                    <div className="flex flex-col gap-2">
+                      {assignedTo.map(uid => {
+                        const user = users.find(u => u.id === uid);
+                        return user ? (
+                          <div key={uid} className="flex items-center gap-4 group p-1 transition-all">
+                            <div className="relative">
+                              <UserAvatar name={user.name} avatar={user.avatar} size="md" className="rounded-xl ring-2 ring-white/5 transition-all group-hover:ring-primary/40" />
+                              <div className="absolute -bottom-1 -right-1 bg-green-500 w-3 h-3 rounded-full border-2 border-background" />
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-sm font-black text-foreground/90 leading-none mb-1">{user.name}</p>
+                              <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-50">{user.cargo || 'Membro'}</p>
+                            </div>
+                            <Button
+                              variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-60 hover:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-all"
+                              onClick={() => toggleAssignee(uid)}
+                              title="Remover atribuição"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : null;
+                      })}
+                      {assignedTo.length === 0 && (
+                        <div className="flex-1 flex items-center justify-center py-6">
+                          <p className="text-center text-xs text-muted-foreground/30 font-bold italic">Nenhum responsável atribuído</p>
+                        </div>
+                      )}
+                    </div>
+                    <Button variant="ghost" className="w-full justify-center h-14 rounded-2xl hover:bg-white/10 border-2 border-dashed border-white/5 gap-3 text-xs font-black uppercase tracking-widest text-muted-foreground/60 hover:text-primary hover:border-primary/20 transition-all active:scale-95 shadow-lg shadow-black/20" onClick={() => toggleAssignee(currentUser.id)}>
                       <UserPlus className="h-5 w-5" /> Atribuir a mim
                     </Button>
                   </div>

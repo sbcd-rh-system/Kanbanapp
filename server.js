@@ -53,15 +53,28 @@ db.exec(`
     tags TEXT, -- JSON
     connections TEXT, -- JSON
     points INTEGER DEFAULT 0,
-    priority TEXT DEFAULT 'medium'
+    priority TEXT DEFAULT 'medium',
+    projectId TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS projetos (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    sectorId TEXT NOT NULL,
+    color TEXT,
+    createdAt TEXT NOT NULL,
+    createdBy TEXT
   );
 `);
 
 // Migração manual simples para colunas novas
 try { db.exec("ALTER TABLE tarefas ADD COLUMN points INTEGER DEFAULT 0;"); } catch (e) { }
 try { db.exec("ALTER TABLE tarefas ADD COLUMN priority TEXT DEFAULT 'medium';"); } catch (e) { }
+try { db.exec("ALTER TABLE tarefas ADD COLUMN projectId TEXT;"); } catch (e) { }
 try { db.exec("ALTER TABLE usuarios ADD COLUMN linkedin_url TEXT;"); } catch (e) { }
 try { db.exec("ALTER TABLE usuarios ADD COLUMN linkedin_photo TEXT;"); } catch (e) { }
+try { db.exec("ALTER TABLE projetos ADD COLUMN createdBy TEXT;"); } catch (e) { }
 
 // Rota para buscar usuários
 app.get('/api/users', (req, res) => {
@@ -108,6 +121,54 @@ app.delete('/api/users/:id', (req, res) => {
     }
 });
 
+// --- ROTAS DE PROJETOS ---
+
+app.get('/api/projects', (req, res) => {
+    try {
+        const { sectorId } = req.query;
+        let query = 'SELECT * FROM projetos';
+        let params = [];
+        if (sectorId) {
+            query += ' WHERE sectorId = ?';
+            params.push(sectorId);
+        }
+        query += ' ORDER BY name COLLATE NOCASE ASC';
+        const projects = db.prepare(query).all(...params);
+        res.json(projects);
+    } catch (error) {
+        console.error('Erro ao buscar projetos:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/projects', (req, res) => {
+    try {
+        const { id, name, description, sectorId, color, createdAt, createdBy } = req.body;
+        const stmt = db.prepare(`
+            INSERT OR REPLACE INTO projetos (id, name, description, sectorId, color, createdAt, createdBy)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `);
+        stmt.run(id, name, description, sectorId, color, createdAt || new Date().toISOString(), createdBy);
+        res.status(201).json({ message: 'Projeto salvo com sucesso' });
+    } catch (error) {
+        console.error('Erro ao salvar projeto:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.delete('/api/projects/:id', (req, res) => {
+    try {
+        const { id } = req.params;
+        db.prepare('DELETE FROM projetos WHERE id = ?').run(id);
+        // Opcional: Desvincular tarefas ou deletá-las
+        db.prepare('UPDATE tarefas SET projectId = NULL WHERE projectId = ?').run(id);
+        res.json({ message: 'Projeto removido com sucesso' });
+    } catch (error) {
+        console.error('Erro ao deletar projeto:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // --- ROTAS DE TAREFAS ---
 
 // Buscar todas as tarefas
@@ -136,16 +197,16 @@ app.post('/api/tasks', (req, res) => {
         const {
             id, title, description, status, sectorId,
             assignedTo, isPrivate, createdBy, createdAt,
-            dueDate, tags, connections, points, priority
+            dueDate, tags, connections, points, priority, projectId
         } = req.body;
 
         const stmt = db.prepare(`
             INSERT OR REPLACE INTO tarefas (
                 id, title, description, status, sectorId,
                 assignedTo, isPrivate, createdBy, createdAt,
-                dueDate, tags, connections, points, priority
+                dueDate, tags, connections, points, priority, projectId
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
         stmt.run(
@@ -158,7 +219,8 @@ app.post('/api/tasks', (req, res) => {
             JSON.stringify(tags || []),
             JSON.stringify(connections || []),
             points || 0,
-            priority || 'medium'
+            priority || 'medium',
+            projectId
         );
 
         res.status(201).json({ message: 'Tarefa salva com sucesso' });

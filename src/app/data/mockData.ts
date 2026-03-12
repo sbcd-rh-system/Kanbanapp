@@ -1,4 +1,4 @@
-import { User, Sector, Task, SectorId } from '../types';
+import { User, Sector, Task, SectorId, Project } from '../types';
 
 export const sectors: Sector[] = [
   { id: 'recruitment', name: 'Recrutamento e Seleção', color: '#67e8f9', icon: 'users' },
@@ -43,6 +43,14 @@ export const users: User[] = [
   },
 ];
 
+export const projects: Project[] = [
+  { id: 'proj-1', name: 'Contratação Tech 2026', sectorId: 'recruitment', createdAt: '2026-01-01', color: '#67e8f9' },
+  { id: 'proj-2', name: 'Revisão Salarial Anual', sectorId: 'compensation', createdAt: '2026-01-01', color: '#86efac' },
+  { id: 'proj-3', name: 'Cultura e Engajamento', sectorId: 'dho', createdAt: '2026-01-01', color: '#fde047' },
+  { id: 'proj-4', name: 'Digitalização de Benefícios', sectorId: 'dp', createdAt: '2026-01-01', color: '#f9a8d4' },
+  { id: 'proj-5', name: 'Data Pipeline RH', sectorId: 'data', createdAt: '2026-01-01', color: '#6366f1' },
+];
+
 export const tasks: Task[] = [
   {
     id: 'task-1',
@@ -57,6 +65,7 @@ export const tasks: Task[] = [
     dueDate: '2026-03-15',
     tags: ['vaga', 'tech'],
     connections: ['task-2', 'task-5'],
+    projectId: 'proj-1',
   },
   {
     id: 'task-2',
@@ -71,6 +80,7 @@ export const tasks: Task[] = [
     dueDate: '2026-03-16',
     tags: ['divulgação'],
     connections: ['task-1'],
+    projectId: 'proj-1',
   },
   {
     id: 'task-3',
@@ -85,6 +95,7 @@ export const tasks: Task[] = [
     dueDate: '2026-03-20',
     tags: ['salário', 'confidencial'],
     connections: ['task-7'],
+    projectId: 'proj-2',
   },
   {
     id: 'task-4',
@@ -112,6 +123,7 @@ export const tasks: Task[] = [
     dueDate: '2026-03-12',
     tags: ['onboarding', 'digital'],
     connections: ['task-1'],
+    projectId: 'proj-3',
   },
   {
     id: 'task-6',

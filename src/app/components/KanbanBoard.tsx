@@ -1,6 +1,4 @@
 import { useState, useEffect } from 'react';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
 import { KanbanColumn } from './KanbanColumn';
 import { ConnectionLine } from './ConnectionLine';
 import { Task, TaskStatus, SectorId } from '../types';
@@ -10,6 +8,7 @@ import { toast } from 'sonner';
 
 interface KanbanBoardProps {
   sectorId: SectorId;
+  projectId?: string | 'no-project'; // Filtro de projeto
   onEditTask: (task: Task) => void;
   onViewConnections: (task: Task) => void;
   userId?: string;
@@ -19,6 +18,7 @@ interface KanbanBoardProps {
 
 export function KanbanBoard({
   sectorId,
+  projectId,
   onEditTask,
   onViewConnections,
   userId,
@@ -34,6 +34,13 @@ export function KanbanBoard({
         // Filtrar tarefas por setor e permissões
         let filteredTasks = allTasks.filter(t => t.sectorId === sectorId);
 
+        // Filtrar por projeto se selecionado
+        if (projectId === 'no-project') {
+          filteredTasks = filteredTasks.filter(t => !t.projectId);
+        } else if (projectId) {
+          filteredTasks = filteredTasks.filter(t => t.projectId === projectId);
+        }
+
         if (userRole !== 'admin' && userId) {
           filteredTasks = filteredTasks.filter(t =>
             !t.isPrivate || t.createdBy === userId || t.assignedTo.includes(userId)
@@ -46,7 +53,7 @@ export function KanbanBoard({
       }
     }
     loadTasks();
-  }, [sectorId, userId, userRole]);
+  }, [sectorId, projectId, userId, userRole, tasks.length]); // Added tasks.length to refresh on local changes if needed, though handleDrop updates state
 
   const handleDrop = async (taskId: string, newStatus: TaskStatus) => {
     const taskToUpdate = tasks.find(t => t.id === taskId);
@@ -99,35 +106,33 @@ export function KanbanBoard({
   }
 
   return (
-    <DndProvider backend={HTML5Backend}>
-      <div className="relative">
-        {/* Linhas de conexão estilo neurônio */}
-        {visibleConnections.map(conn => (
-          <ConnectionLine
-            key={`${conn.from}-${conn.to}`}
-            fromTaskId={conn.from}
-            toTaskId={conn.to}
-            color={conn.color}
-            type="related"
+    <div className="relative">
+      {/* Linhas de conexão estilo neurônio */}
+      {visibleConnections.map(conn => (
+        <ConnectionLine
+          key={`${conn.from}-${conn.to}`}
+          fromTaskId={conn.from}
+          toTaskId={conn.to}
+          color={conn.color}
+          type="related"
+        />
+      ))}
+
+      {/* Colunas do Kanban */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 relative z-10">
+        {columns.map(column => (
+          <KanbanColumn
+            key={column.id}
+            title={column.title}
+            status={column.id}
+            tasks={tasks.filter(task => task.status === column.id)}
+            onDrop={handleDrop}
+            onEditTask={onEditTask}
+            onDeleteTask={handleDeleteTask}
+            onViewConnections={onViewConnections}
           />
         ))}
-
-        {/* Colunas do Kanban */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 relative z-10">
-          {columns.map(column => (
-            <KanbanColumn
-              key={column.id}
-              title={column.title}
-              status={column.id}
-              tasks={tasks.filter(task => task.status === column.id)}
-              onDrop={handleDrop}
-              onEditTask={onEditTask}
-              onDeleteTask={handleDeleteTask}
-              onViewConnections={onViewConnections}
-            />
-          ))}
-        </div>
       </div>
-    </DndProvider>
+    </div>
   );
 }

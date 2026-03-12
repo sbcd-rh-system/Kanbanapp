@@ -34,6 +34,16 @@ export interface TaskConnection {
   type: 'dependency' | 'related' | 'blocks';
 }
 
+export interface Project {
+  id: string;
+  name: string;
+  description?: string;
+  sectorId: SectorId;
+  color?: string;
+  createdAt: string;
+  createdBy: string;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -47,6 +57,7 @@ export interface Task {
   dueDate?: string;
   tags: string[];
   connections: string[]; // IDs of connected tasks
+  projectId?: string; // ID do projeto ao qual a tarefa pertence
   points?: number;
   priority?: 'low' | 'medium' | 'high' | 'critical';
   comments?: TaskComment[];
