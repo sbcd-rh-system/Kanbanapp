@@ -15,7 +15,8 @@
       "Bash(cd \"C:\\\\Users\\\\mandy\\\\OneDrive - SOCIEDADE BRASILEIRA CAMINHO DE DAMASCO\\\\Apps\\\\Kanbanapp\" && npm run build 2>&1 | head -30)",
       "Bash(curl -s http://localhost:3002/api/projects 2>&1)",
       "Bash(curl -s http://localhost:5173/api/projects 2>&1)",
-      "Bash(curl -s http://localhost:5173 2>&1 | head -5)"
+      "Bash(curl -s http://localhost:5173 2>&1 | head -5)",
+      "Bash(cd \"C:\\\\Users\\\\mandy\\\\OneDrive - SOCIEDADE BRASILEIRA CAMINHO DE DAMASCO\\\\Apps\\\\Kanbanapp\" && npm run build 2>&1 | tail -20)"
     ]
   }
 }

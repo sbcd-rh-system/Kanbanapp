@@ -184,21 +184,6 @@ export default function KanbanView() {
     }
   };
 
-  // Move task to a specific project (for drag & drop from "no-project" to projects)
-  const moveTaskToProject = async (taskId: string, projectId: string) => {
-    try {
-      const task = tasks.find(t => t.id === taskId);
-      if (!task) return;
-
-      const updatedTask = { ...task, projectId };
-      await taskService.saveTask(updatedTask);
-      toast.success('Tarefa movida para o projeto!');
-      setBoardKey(prev => prev + 1);
-    } catch (error) {
-      toast.error('Erro ao mover tarefa');
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/30">
       {/* Premium Header */}
@@ -453,6 +438,7 @@ export default function KanbanView() {
                           key={`${boardKey}-${p.id}`}
                           sectorId={sectorId!}
                           projectId={p.id}
+                          targetProjectId={p.id}
                           onEditTask={handleEditTask}
                           onViewConnections={handleViewConnections}
                           onAddTask={handleCreateTask}

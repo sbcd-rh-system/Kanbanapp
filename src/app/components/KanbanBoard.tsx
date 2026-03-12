@@ -1,25 +1,28 @@
 import { useState, useEffect } from 'react';
 import { KanbanColumn } from './KanbanColumn';
 import { ConnectionLine } from './ConnectionLine';
-import { Task, TaskStatus, SectorId } from '../types';
+import { Task, TaskStatus, SectorId, Project } from '../types';
 import { taskService } from '../services/taskService';
 import { getSectorById } from '../data/mockData';
 import { toast } from 'sonner';
 
 interface KanbanBoardProps {
   sectorId: SectorId;
-  projectId?: string | 'no-project'; // Filtro de projeto
+  projectId?: string | 'no-project' | 'all'; // Filtro de projeto (all = todos projetos + avulsas)
+  targetProjectId?: string; // Projeto destino para mover tarefas avulsas para cá
   onEditTask: (task: Task) => void;
   onViewConnections: (task: Task) => void;
   onAddTask?: (status: TaskStatus) => void;
   userId?: string;
   userRole?: string;
   showConnections?: boolean;
+  projects?: Project[]; // Lista de projetos para o modo "todos"
 }
 
 export function KanbanBoard({
   sectorId,
   projectId,
+  targetProjectId,
   onEditTask,
   onViewConnections,
   onAddTask,
@@ -61,7 +64,12 @@ export function KanbanBoard({
     const taskToUpdate = tasks.find(t => t.id === taskId);
     if (!taskToUpdate) return;
 
-    const updatedTask = { ...taskToUpdate, status: newStatus };
+    // Se tem targetProjectId e a tarefa é avulsa, atribuir ao projeto
+    const updatedTask = {
+      ...taskToUpdate,
+      status: newStatus,
+      ...(targetProjectId ? { projectId: targetProjectId } : {})
+    };
 
     try {
       await taskService.saveTask(updatedTask);
@@ -70,7 +78,7 @@ export function KanbanBoard({
           task.id === taskId ? updatedTask : task
         )
       );
-      toast.success('Tarefa movida com sucesso!');
+      toast.success(targetProjectId ? 'Tarefa movida para o projeto!' : 'Tarefa movida com sucesso!');
     } catch (error) {
       toast.error('Erro ao mover tarefa no servidor');
     }
