@@ -1,28 +1,28 @@
-import { User, Sector, Task, SectorId, Project } from '../types';
+import { User, Sector, Task, SectorId } from '../types';
 
 export const sectors: Sector[] = [
-  { id: 'recruitment', name: 'Recrutamento e Seleção', color: '#67e8f9', icon: 'users' },
-  { id: 'compensation', name: 'Cargos e Salários', color: '#86efac', icon: 'dollar-sign' },
-  { id: 'dho', name: 'DHO', color: '#fde047', icon: 'clipboard-list' },
-  { id: 'dp', name: 'DP', color: '#f9a8d4', icon: 'briefcase-business' },
-  { id: 'data', name: 'Dados', color: '#6366f1', icon: 'database' },
+  { id: 'recruitment', name: 'Recrutamento e Seleção', color: '#06b6d4', icon: 'users' },
+  { id: 'compensation', name: 'Cargos e Salários', color: '#22c55e', icon: 'dollar-sign' },
+  { id: 'dho', name: 'DHO', color: '#eab308', icon: 'clipboard-list' },
+  { id: 'training', name: 'Treinamento', color: '#a855f7', icon: 'graduation-cap' },
+  { id: 'benefits', name: 'Benefícios', color: '#ec4899', icon: 'gift' },
 ];
 
 export const users: User[] = [
   {
     id: '1',
-    name: 'Admin Amanda',
+    name: 'Admin Silva',
     email: 'admin@empresa.com',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin',
     role: 'admin',
-    sectors: ['recruitment', 'compensation', 'dho', 'dp', 'data'],
+    sectors: ['recruitment', 'compensation', 'dho', 'training', 'benefits'],
   },
   {
     id: '2',
-    name: 'Josué',
+    name: 'Maria Santos',
     email: 'maria@empresa.com',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Maria',
-    role: 'admin',
+    role: 'user',
     sectors: ['recruitment'],
   },
   {
@@ -31,7 +31,7 @@ export const users: User[] = [
     email: 'joao@empresa.com',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Joao',
     role: 'user',
-    sectors: ['compensation', 'dho', 'data'],
+    sectors: ['compensation', 'dho'],
   },
   {
     id: '4',
@@ -39,16 +39,8 @@ export const users: User[] = [
     email: 'ana@empresa.com',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ana',
     role: 'user',
-    sectors: ['dp'],
+    sectors: ['training', 'benefits'],
   },
-];
-
-export const projects: Project[] = [
-  { id: 'proj-1', name: 'Contratação Tech 2026', sectorId: 'recruitment', createdAt: '2026-01-01', color: '#67e8f9' },
-  { id: 'proj-2', name: 'Revisão Salarial Anual', sectorId: 'compensation', createdAt: '2026-01-01', color: '#86efac' },
-  { id: 'proj-3', name: 'Cultura e Engajamento', sectorId: 'dho', createdAt: '2026-01-01', color: '#fde047' },
-  { id: 'proj-4', name: 'Digitalização de Benefícios', sectorId: 'dp', createdAt: '2026-01-01', color: '#f9a8d4' },
-  { id: 'proj-5', name: 'Data Pipeline RH', sectorId: 'data', createdAt: '2026-01-01', color: '#6366f1' },
 ];
 
 export const tasks: Task[] = [
@@ -65,7 +57,6 @@ export const tasks: Task[] = [
     dueDate: '2026-03-15',
     tags: ['vaga', 'tech'],
     connections: ['task-2', 'task-5'],
-    projectId: 'proj-1',
   },
   {
     id: 'task-2',
@@ -80,7 +71,6 @@ export const tasks: Task[] = [
     dueDate: '2026-03-16',
     tags: ['divulgação'],
     connections: ['task-1'],
-    projectId: 'proj-1',
   },
   {
     id: 'task-3',
@@ -95,7 +85,6 @@ export const tasks: Task[] = [
     dueDate: '2026-03-20',
     tags: ['salário', 'confidencial'],
     connections: ['task-7'],
-    projectId: 'proj-2',
   },
   {
     id: 'task-4',
@@ -115,7 +104,7 @@ export const tasks: Task[] = [
     title: 'Preparar onboarding digital',
     description: 'Criar fluxo de integração online para novos colaboradores',
     status: 'review',
-    sectorId: 'dho',
+    sectorId: 'training',
     assignedTo: ['4'],
     isPrivate: false,
     createdBy: '4',
@@ -123,7 +112,6 @@ export const tasks: Task[] = [
     dueDate: '2026-03-12',
     tags: ['onboarding', 'digital'],
     connections: ['task-1'],
-    projectId: 'proj-3',
   },
   {
     id: 'task-6',
@@ -156,7 +144,7 @@ export const tasks: Task[] = [
     title: 'Implementar novo plano de saúde',
     description: 'Negociação com operadoras e comunicação aos colaboradores',
     status: 'done',
-    sectorId: 'dp',
+    sectorId: 'benefits',
     assignedTo: ['4', '1'],
     isPrivate: false,
     createdBy: '1',
@@ -182,7 +170,7 @@ export const tasks: Task[] = [
     title: 'Workshop de liderança',
     description: 'Organizar treinamento para gestores',
     status: 'todo',
-    sectorId: 'dho',
+    sectorId: 'training',
     assignedTo: ['4'],
     isPrivate: false,
     createdBy: '4',
@@ -191,67 +179,43 @@ export const tasks: Task[] = [
     tags: ['liderança', 'gestão'],
     connections: [],
   },
-  {
-    id: 'task-11',
-    title: 'Integração API Oris',
-    description: 'Finalizar os endpoints de sincronização de funcionários',
-    status: 'in-progress',
-    sectorId: 'data',
-    assignedTo: ['1'],
-    isPrivate: false,
-    createdBy: '1',
-    createdAt: '2026-03-10',
-    dueDate: '2026-03-20',
-    tags: ['api', 'sincronização'],
-    connections: [],
-  },
-  {
-    id: 'task-12',
-    title: 'Modelagem Banco de Dados',
-    description: 'Otimizar queries para o dashboard de gestão',
-    status: 'todo',
-    sectorId: 'data',
-    assignedTo: ['1', '3'],
-    isPrivate: false,
-    createdBy: '1',
-    createdAt: '2026-03-11',
-    tags: ['db', 'performance'],
-    connections: ['task-11'],
-  },
 ];
 
-// Sessão por aba: usa sessionStorage para que cada aba tenha seu próprio usuário logado
-const SESSION_KEY = 'kanban_current_user';
+// Mock login - em produção seria feito via Supabase
+let currentUser: User = users[0]; // Default admin
 
-export const getCurrentUser = (): User => {
-  try {
-    const stored = sessionStorage.getItem(SESSION_KEY);
-    if (stored) return JSON.parse(stored) as User;
-  } catch { }
-  // Fallback: primeiro admin da lista
-  return users[0];
-};
+export const getCurrentUser = () => currentUser;
 
 export const setCurrentUser = (user: User) => {
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify(user));
+  currentUser = user;
+};
+
+export const loginUser = (email: string, password: string): User | null => {
+  const user = users.find(u => u.email === email);
+  // Simulação simples - em produção usaria Supabase Auth
+  if (user && password === 'demo123') {
+    setCurrentUser(user);
+    return user;
+  }
+  return null;
 };
 
 export const logoutUser = () => {
-  sessionStorage.removeItem(SESSION_KEY);
+  setCurrentUser(users[0]);
 };
 
 export const getSectorById = (id: SectorId) => sectors.find(s => s.id === id);
 
 export const getTasksBySector = (sectorId: SectorId, userId?: string, role?: string) => {
   let filteredTasks = tasks.filter(t => t.sectorId === sectorId);
-
+  
   // Se não é admin, filtrar tarefas privadas de outros
   if (role !== 'admin' && userId) {
-    filteredTasks = filteredTasks.filter(t =>
+    filteredTasks = filteredTasks.filter(t => 
       !t.isPrivate || t.createdBy === userId || t.assignedTo.includes(userId)
     );
   }
-
+  
   return filteredTasks;
 };
 

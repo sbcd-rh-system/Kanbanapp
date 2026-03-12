@@ -19,19 +19,4 @@ export default defineConfig({
 
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ['**/*.svg', '**/*.csv'],
-
-  server: {
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3002',
-        changeOrigin: true,
-      },
-      '/oris-api': {
-        target: 'https://portal.orisrh.com:9878/apiV1',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/oris-api/, ''),
-        secure: false,
-      }
-    }
-  }
 })

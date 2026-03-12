@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
+import { getSectorById } from '../data/mockData';
+import { tasks } from '../data/mockData';
 
 interface ConnectionLineProps {
   fromTaskId: string;
   toTaskId: string;
-  color?: string;
   type?: 'dependency' | 'related' | 'blocks';
 }
 
@@ -12,7 +13,7 @@ interface Position {
   y: number;
 }
 
-export function ConnectionLine({ fromTaskId, toTaskId, color = '#06b6d4', type = 'related' }: ConnectionLineProps) {
+export function ConnectionLine({ fromTaskId, toTaskId, type = 'related' }: ConnectionLineProps) {
   const [fromPos, setFromPos] = useState<Position | null>(null);
   const [toPos, setToPos] = useState<Position | null>(null);
 
@@ -24,7 +25,7 @@ export function ConnectionLine({ fromTaskId, toTaskId, color = '#06b6d4', type =
       if (fromEl && toEl) {
         const fromRect = fromEl.getBoundingClientRect();
         const toRect = toEl.getBoundingClientRect();
-
+        
         const scrollX = window.scrollX;
         const scrollY = window.scrollY;
 
@@ -41,14 +42,17 @@ export function ConnectionLine({ fromTaskId, toTaskId, color = '#06b6d4', type =
     };
 
     updatePositions();
-
+    
+    // Atualizar quando houver scroll ou resize
     window.addEventListener('scroll', updatePositions, true);
     window.addEventListener('resize', updatePositions);
-
+    
+    // Usar MutationObserver para detectar mudanças no DOM
     const observer = new MutationObserver(updatePositions);
     observer.observe(document.body, { childList: true, subtree: true, attributes: true });
 
-    const interval = setInterval(updatePositions, 200);
+    // Atualizar periodicamente para garantir
+    const interval = setInterval(updatePositions, 100);
 
     return () => {
       window.removeEventListener('scroll', updatePositions, true);
@@ -59,6 +63,11 @@ export function ConnectionLine({ fromTaskId, toTaskId, color = '#06b6d4', type =
   }, [fromTaskId, toTaskId]);
 
   if (!fromPos || !toPos) return null;
+
+  // Obter cor do setor da tarefa de origem
+  const fromTask = tasks.find(t => t.id === fromTaskId);
+  const sector = fromTask ? getSectorById(fromTask.sectorId) : null;
+  const color = sector?.color || '#06b6d4';
 
   // Calcular o caminho da linha com curva mais orgânica (estilo neurônio)
   const dx = toPos.x - fromPos.x;
@@ -80,15 +89,12 @@ export function ConnectionLine({ fromTaskId, toTaskId, color = '#06b6d4', type =
 
   return (
     <svg
-      className="pointer-events-none"
+      className="absolute top-0 left-0 pointer-events-none"
       style={{
+        width: '100%',
+        height: '100%',
         position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100vw',
-        height: '100vh',
-        zIndex: 5,
-        overflow: 'visible',
+        zIndex: 1,
       }}
     >
       <defs>

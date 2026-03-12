@@ -1,50 +1,44 @@
-import * as React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
-interface UserAvatarProps extends React.HTMLAttributes<HTMLDivElement> {
+interface UserAvatarProps {
   name: string;
   avatar: string;
-  size?: 'xs' | 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg';
   showTooltip?: boolean;
 }
 
-export const UserAvatar = React.forwardRef<HTMLDivElement, UserAvatarProps>(
-  ({ name, avatar, size = 'md', showTooltip = true, ...props }, ref) => {
-    const sizeClasses = {
-      xs: 'h-5 w-5 text-[8px]',
-      sm: 'h-6 w-6 text-xs',
-      md: 'h-8 w-8 text-sm',
-      lg: 'h-10 w-10 text-base',
-    };
+export function UserAvatar({ name, avatar, size = 'md', showTooltip = true }: UserAvatarProps) {
+  const sizeClasses = {
+    sm: 'h-6 w-6 text-xs',
+    md: 'h-8 w-8 text-sm',
+    lg: 'h-10 w-10 text-base',
+  };
 
-    const initials = name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
+  const initials = name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 
-    const avatarComponent = (
-      <Avatar className={sizeClasses[size]} {...props} ref={ref}>
-        <AvatarImage src={avatar} alt={name} />
-        <AvatarFallback>{initials}</AvatarFallback>
-      </Avatar>
-    );
+  const avatarComponent = (
+    <Avatar className={sizeClasses[size]}>
+      <AvatarImage src={avatar} alt={name} />
+      <AvatarFallback>{initials}</AvatarFallback>
+    </Avatar>
+  );
 
-    if (!showTooltip) return avatarComponent;
+  if (!showTooltip) return avatarComponent;
 
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>{avatarComponent}</TooltipTrigger>
-          <TooltipContent>
-            <p>{name}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  }
-);
-
-UserAvatar.displayName = 'UserAvatar';
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>{avatarComponent}</TooltipTrigger>
+        <TooltipContent>
+          <p>{name}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}

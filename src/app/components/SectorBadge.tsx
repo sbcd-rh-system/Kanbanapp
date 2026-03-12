@@ -9,7 +9,7 @@ interface SectorBadgeProps {
 
 export function SectorBadge({ sectorId, size = 'md' }: SectorBadgeProps) {
   const sector = getSectorById(sectorId);
-
+  
   if (!sector) return null;
 
   return (
@@ -19,7 +19,7 @@ export function SectorBadge({ sectorId, size = 'md' }: SectorBadgeProps) {
         color: sector.color,
         borderColor: sector.color,
       }}
-      className={`border ${size === 'sm' ? 'text-xs px-1.5 py-0' : 'text-sm'}`}
+      className={`border ${size === 'sm' ? 'text-xs px-1.5 py-0' : 'text-xs'}`}
     >
       {sector.name}
     </Badge>
