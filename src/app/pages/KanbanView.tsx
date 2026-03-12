@@ -105,7 +105,7 @@ export default function KanbanView() {
   const handleSaveTask = async (taskData: Partial<Task>) => {
     try {
       const taskToSave = {
-        ...(selectedTask || {
+        ...(selectedTask && selectedTask.id ? selectedTask : {
           id: `task-${Date.now()}`,
           createdBy: currentUser.id,
           createdAt: new Date().toISOString(),
@@ -216,7 +216,7 @@ export default function KanbanView() {
             </div>
 
             <div className="flex items-center gap-3">
-              <Button onClick={handleCreateTask} className="gradient-blue shadow-lg shadow-blue-500/20 border-none h-10 px-4 rounded-xl gap-2 font-bold transition-all active:scale-95">
+              <Button onClick={() => handleCreateTask()} className="gradient-blue shadow-lg shadow-blue-500/20 border-none h-10 px-4 rounded-xl gap-2 font-bold transition-all active:scale-95">
                 <Plus className="h-4 w-4" />
                 Nova Tarefa
               </Button>
