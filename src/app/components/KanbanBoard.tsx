@@ -4,7 +4,8 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import { KanbanColumn } from './KanbanColumn';
 import { ConnectionLine } from './ConnectionLine';
 import { Task, TaskStatus, SectorId } from '../types';
-import { tasks as initialTasks } from '../data/mockData';
+import { taskService } from '../services/taskService';
+import { getSectorById } from '../data/mockData';
 import { toast } from 'sonner';
 
 interface KanbanBoardProps {
@@ -27,30 +28,53 @@ export function KanbanBoard({
   const [tasks, setTasks] = useState<Task[]>([]);
 
   useEffect(() => {
-    // Filtrar tarefas por setor e permissões
-    let filteredTasks = initialTasks.filter(t => t.sectorId === sectorId);
-    
-    if (userRole !== 'admin' && userId) {
-      filteredTasks = filteredTasks.filter(t => 
-        !t.isPrivate || t.createdBy === userId || t.assignedTo.includes(userId)
-      );
+    async function loadTasks() {
+      try {
+        const allTasks = await taskService.listTasks();
+        // Filtrar tarefas por setor e permissões
+        let filteredTasks = allTasks.filter(t => t.sectorId === sectorId);
+
+        if (userRole !== 'admin' && userId) {
+          filteredTasks = filteredTasks.filter(t =>
+            !t.isPrivate || t.createdBy === userId || t.assignedTo.includes(userId)
+          );
+        }
+
+        setTasks(filteredTasks);
+      } catch (error) {
+        toast.error('Erro ao carregar tarefas');
+      }
     }
-    
-    setTasks(filteredTasks);
+    loadTasks();
   }, [sectorId, userId, userRole]);
 
-  const handleDrop = (taskId: string, newStatus: TaskStatus) => {
-    setTasks(prevTasks =>
-      prevTasks.map(task =>
-        task.id === taskId ? { ...task, status: newStatus } : task
-      )
-    );
-    toast.success('Tarefa movida com sucesso!');
+  const handleDrop = async (taskId: string, newStatus: TaskStatus) => {
+    const taskToUpdate = tasks.find(t => t.id === taskId);
+    if (!taskToUpdate) return;
+
+    const updatedTask = { ...taskToUpdate, status: newStatus };
+
+    try {
+      await taskService.saveTask(updatedTask);
+      setTasks(prevTasks =>
+        prevTasks.map(task =>
+          task.id === taskId ? updatedTask : task
+        )
+      );
+      toast.success('Tarefa movida com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao mover tarefa no servidor');
+    }
   };
 
-  const handleDeleteTask = (taskId: string) => {
-    setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
-    toast.success('Tarefa deletada com sucesso!');
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      await taskService.deleteTask(taskId);
+      setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+      toast.success('Tarefa deletada com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao deletar tarefa no servidor');
+    }
   };
 
   const columns: { id: TaskStatus; title: string }[] = [
@@ -61,12 +85,14 @@ export function KanbanBoard({
   ];
 
   // Preparar linhas de conexão visíveis
-  const visibleConnections: Array<{ from: string; to: string }> = [];
+  const visibleConnections: Array<{ from: string; to: string; color: string }> = [];
   if (showConnections) {
     tasks.forEach(task => {
+      const sector = getSectorById(task.sectorId);
+      const color = sector?.color || '#06b6d4';
       task.connections.forEach(connId => {
         if (tasks.some(t => t.id === connId)) {
-          visibleConnections.push({ from: task.id, to: connId });
+          visibleConnections.push({ from: task.id, to: connId, color });
         }
       });
     });
@@ -75,12 +101,13 @@ export function KanbanBoard({
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="relative">
-        {/* Linhas de conexão */}
+        {/* Linhas de conexão estilo neurônio */}
         {visibleConnections.map(conn => (
           <ConnectionLine
             key={`${conn.from}-${conn.to}`}
             fromTaskId={conn.from}
             toTaskId={conn.to}
+            color={conn.color}
             type="related"
           />
         ))}
