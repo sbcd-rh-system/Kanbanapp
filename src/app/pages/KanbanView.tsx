@@ -8,7 +8,7 @@ import { TaskModal } from '../components/TaskModal';
 import { ConnectionGraph } from '../components/ConnectionGraph';
 import { UserAvatar } from '../components/UserAvatar';
 import { getSectorById, getCurrentUser, sectors } from '../data/mockData';
-import { Task, SectorId, User, Project } from '../types';
+import { Task, SectorId, TaskStatus, User, Project } from '../types';
 import { taskService } from '../services/taskService';
 import { userService } from '../services/userService';
 import { projectService } from '../services/projectService';
@@ -52,6 +52,7 @@ export default function KanbanView() {
 
   const [taskModalOpen, setTaskModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | undefined>();
+  const [initialStatus, setInitialStatus] = useState<TaskStatus>('todo');
   const [connectionModalOpen, setConnectionModalOpen] = useState(false);
   const [connectionTask, setConnectionTask] = useState<Task | undefined>();
   const [showConnections, setShowConnections] = useState(true);
@@ -90,23 +91,25 @@ export default function KanbanView() {
   }
 
   const handleCreateTask = (status?: TaskStatus) => {
-    setSelectedTask(status ? { status } as Task : undefined);
+    setSelectedTask(undefined);
+    setInitialStatus(status || 'todo');
     setTaskModalOpen(true);
   };
 
   const handleEditTask = (task: Task) => {
     setSelectedTask(task);
+    setInitialStatus(task.status);
     setTaskModalOpen(true);
   };
 
   const handleSaveTask = async (taskData: Partial<Task>) => {
     try {
       const taskToSave = {
-        ...(selectedTask && selectedTask.id ? selectedTask : {
+        ...(selectedTask || {
           id: `task-${Date.now()}`,
           createdBy: currentUser.id,
           createdAt: new Date().toISOString(),
-          status: selectedTask?.status || 'todo',
+          status: initialStatus,
           assignedTo: [],
           tags: [],
           connections: [],
@@ -469,6 +472,7 @@ export default function KanbanView() {
         onClose={() => setTaskModalOpen(false)}
         onSave={handleSaveTask}
         task={selectedTask}
+        initialStatus={initialStatus}
         sectorId={sectorId!}
         users={users}
         projects={projects}

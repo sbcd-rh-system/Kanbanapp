@@ -30,12 +30,13 @@ interface TaskModalProps {
   onClose: () => void;
   onSave: (task: Partial<Task>) => void;
   task?: Task;
+  initialStatus?: TaskStatus;
   sectorId: SectorId;
   users: User[];
   projects?: Project[];
 }
 
-export function TaskModal({ open, onClose, onSave, task, sectorId, users, projects = [] }: TaskModalProps) {
+export function TaskModal({ open, onClose, onSave, task, initialStatus = 'todo', sectorId, users, projects = [] }: TaskModalProps) {
   const currentUser = getCurrentUser();
   const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [title, setTitle] = useState('');
@@ -109,7 +110,7 @@ export function TaskModal({ open, onClose, onSave, task, sectorId, users, projec
       setTitle('');
       setDescription('');
       setIsPrivate(false);
-      setStatus('todo');
+      setStatus(initialStatus);
       setAssignedTo([]);
       setDueDate('');
       setTags([]);
@@ -202,7 +203,7 @@ export function TaskModal({ open, onClose, onSave, task, sectorId, users, projec
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-widest border-primary/20 bg-primary/5 text-primary">História de Usuário</Badge>
                 <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold opacity-40">
-                  Criado por {users.find(u => u.id === task?.createdBy)?.name || 'Sistema'} em {task ? `${new Date(task.createdAt).toLocaleDateString()} ${new Date(task.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : 'Hoje'}
+                  Criado por {users.find(u => u.id === task?.createdBy)?.name || 'Sistema'} em {task?.createdAt ? `${new Date(task.createdAt).toLocaleDateString()} ${new Date(task.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : 'Hoje'}
                 </span>
               </div>
             </div>
