@@ -11,6 +11,7 @@ interface KanbanBoardProps {
   projectId?: string | 'no-project'; // Filtro de projeto
   onEditTask: (task: Task) => void;
   onViewConnections: (task: Task) => void;
+  onAddTask?: (status: TaskStatus) => void;
   userId?: string;
   userRole?: string;
   showConnections?: boolean;
@@ -21,6 +22,7 @@ export function KanbanBoard({
   projectId,
   onEditTask,
   onViewConnections,
+  onAddTask,
   userId,
   userRole,
   showConnections = true,
@@ -130,6 +132,7 @@ export function KanbanBoard({
             onEditTask={onEditTask}
             onDeleteTask={handleDeleteTask}
             onViewConnections={onViewConnections}
+            onAddTask={onAddTask}
           />
         ))}
       </div>

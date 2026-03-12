@@ -89,8 +89,8 @@ export default function KanbanView() {
     );
   }
 
-  const handleCreateTask = () => {
-    setSelectedTask(undefined);
+  const handleCreateTask = (status?: TaskStatus) => {
+    setSelectedTask(status ? { status } as Task : undefined);
     setTaskModalOpen(true);
   };
 
@@ -102,11 +102,11 @@ export default function KanbanView() {
   const handleSaveTask = async (taskData: Partial<Task>) => {
     try {
       const taskToSave = {
-        ...(selectedTask || {
+        ...(selectedTask && selectedTask.id ? selectedTask : {
           id: `task-${Date.now()}`,
           createdBy: currentUser.id,
           createdAt: new Date().toISOString(),
-          status: 'todo',
+          status: selectedTask?.status || 'todo',
           assignedTo: [],
           tags: [],
           connections: [],
@@ -408,6 +408,7 @@ export default function KanbanView() {
                         projectId={p.id}
                         onEditTask={handleEditTask}
                         onViewConnections={handleViewConnections}
+                        onAddTask={handleCreateTask}
                         userId={currentUser.id}
                         userRole={currentUser.role}
                         showConnections={showConnections}
@@ -436,6 +437,7 @@ export default function KanbanView() {
                     projectId="no-project"
                     onEditTask={handleEditTask}
                     onViewConnections={handleViewConnections}
+                    onAddTask={handleCreateTask}
                     userId={currentUser.id}
                     userRole={currentUser.role}
                     showConnections={showConnections}
@@ -451,6 +453,7 @@ export default function KanbanView() {
                 projectId={selectedProjectId}
                 onEditTask={handleEditTask}
                 onViewConnections={handleViewConnections}
+                onAddTask={handleCreateTask}
                 userId={currentUser.id}
                 userRole={currentUser.role}
                 showConnections={showConnections}

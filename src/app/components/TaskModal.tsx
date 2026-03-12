@@ -191,7 +191,7 @@ export function TaskModal({ open, onClose, onSave, task, sectorId, users, projec
         {/* Header - Top Section */}
         <div className="flex items-center justify-between px-10 pt-12 pb-8 border-b border-white/5 bg-white/[0.02]">
           <div className="flex items-center gap-8">
-            <span className="text-2xl font-mono text-primary/40 font-bold">#{task ? task.id.split('-')[1] || task.id : 'NOVA'}</span>
+            <span className="text-2xl font-mono text-primary/40 font-bold">#{task?.id ? task.id.split('-')[1] || task.id : 'NOVA'}</span>
             <div className="space-y-1">
               <input
                 className="text-3xl font-black bg-transparent border-none outline-none w-[600px] placeholder:text-muted-foreground/20 focus:ring-0 text-foreground"

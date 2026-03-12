@@ -11,6 +11,7 @@ interface KanbanColumnProps {
   onEditTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
   onViewConnections: (task: Task) => void;
+  onAddTask?: (status: TaskStatus) => void;
 }
 
 export function KanbanColumn({
@@ -21,6 +22,7 @@ export function KanbanColumn({
   onEditTask,
   onDeleteTask,
   onViewConnections,
+  onAddTask,
 }: KanbanColumnProps) {
   const [{ isOver }, drop] = useDrop({
     accept: 'TASK',
@@ -83,11 +85,15 @@ export function KanbanColumn({
           }`}
       >
         {tasks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-40 group">
-            <div className={`w-12 h-12 rounded-2xl ${style.bg} border-2 border-dashed ${style.border} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-              <div className={`w-2 h-2 rounded-full ${style.dot} opacity-20`} />
+          <div
+            onClick={() => onAddTask?.(status)}
+            className="flex flex-col items-center justify-center h-40 group cursor-pointer hover:bg-white/[0.02] rounded-2xl transition-all"
+          >
+            <div className={`w-12 h-12 rounded-2xl ${style.bg} border-2 border-dashed ${style.border} flex items-center justify-center mb-3 group-hover:scale-110 group-hover:border-solid transition-all`}>
+              <div className={`w-2 h-2 rounded-full ${style.dot} opacity-20 group-hover:opacity-100 transition-opacity`} />
             </div>
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground/40">Vazio</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground/40 group-hover:text-muted-foreground/80 transition-colors">Vazio</p>
+            <p className="text-[10px] font-bold uppercase tracking-tighter text-primary opacity-0 group-hover:opacity-100 transition-opacity mt-1">Clique para adicionar</p>
           </div>
         ) : (
           tasks.map(task => (
