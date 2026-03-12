@@ -2,7 +2,7 @@ export type UserRole = 'admin' | 'user';
 
 export type TaskStatus = 'todo' | 'in-progress' | 'review' | 'done';
 
-export type SectorId = 'recruitment' | 'compensation' | 'dho' | 'training' | 'benefits';
+export type SectorId = 'recruitment' | 'compensation' | 'dho' | 'dp' | 'data';
 
 export interface User {
   id: string;
@@ -11,6 +11,14 @@ export interface User {
   avatar: string;
   role: UserRole;
   sectors: SectorId[];
+  id_oris?: number;
+  cpf?: string;
+  matricula_esocial?: string;
+  cargo?: string;
+  dt_admissao?: string;
+  lotacao?: string;
+  situacao?: string;
+  linkedin_url?: string;
 }
 
 export interface Sector {
@@ -26,6 +34,16 @@ export interface TaskConnection {
   type: 'dependency' | 'related' | 'blocks';
 }
 
+export interface Project {
+  id: string;
+  name: string;
+  description?: string;
+  sectorId: SectorId;
+  color?: string;
+  createdAt: string;
+  createdBy: string;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -39,6 +57,26 @@ export interface Task {
   dueDate?: string;
   tags: string[];
   connections: string[]; // IDs of connected tasks
+  projectId?: string; // ID do projeto ao qual a tarefa pertence
+  points?: number;
+  priority?: 'low' | 'medium' | 'high' | 'critical';
+  comments?: TaskComment[];
+  attachments?: TaskAttachment[];
+}
+
+export interface TaskComment {
+  id: string;
+  userId: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface TaskAttachment {
+  id: string;
+  name: string;
+  url: string;
+  type: string;
+  createdAt: string;
 }
 
 export interface KanbanColumn {

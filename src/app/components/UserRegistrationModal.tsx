@@ -1,0 +1,479 @@
+import { useEffect, useState } from 'react';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogTitle,
+} from './ui/dialog';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Checkbox } from './ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { sectors } from '../data/mockData';
+import { orisService, cleanOrisId } from '../services/orisService';
+import { toast } from 'sonner';
+import { Search, UserPlus, Loader2, Edit, RefreshCw, Linkedin, User } from 'lucide-react';
+
+const AVATAR_STYLES = [
+    { id: 'avataaars', name: 'Original' },
+    { id: 'bottts', name: 'Robôs' },
+    { id: 'pixel-art', name: 'Pixel' },
+    { id: 'lorelei', name: 'Ilustração' },
+    { id: 'adventurer', name: 'Aventura' },
+];
+
+interface UserRegistrationModalProps {
+    isOpen: boolean;
+    onOpenChange: (open: boolean) => void;
+    onUserAdded: (userData: any) => void;
+    editingUser?: any;
+    /** Quando definido, limita o modal ao escopo do gestor de setor (não-admin) */
+    restrictedToSectors?: string[];
+}
+
+export function UserRegistrationModal({ isOpen, onOpenChange, onUserAdded, editingUser, restrictedToSectors }: UserRegistrationModalProps) {
+    // Setores disponíveis: todos (admin) ou apenas os do gestor (user)
+    const availableSectors = restrictedToSectors
+        ? sectors.filter(s => restrictedToSectors.includes(s.id))
+        : sectors;
+    const isRestricted = !!restrictedToSectors;
+
+    const [orisId, setOrisId] = useState('');
+    const [isFetching, setIsFetching] = useState(false);
+
+    // Form State
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        role: 'user',
+        selectedSectors: [] as string[],
+        cargo: '',
+        dt_admissao: '',
+        lotacao: '',
+        situacao: '',
+        linkedinUrl: '',    // Link do perfil → usado no badge
+        linkedinPhoto: '',  // URL direta da foto → usado no avatar
+    });
+
+    const [avatarConfig, setAvatarConfig] = useState({
+        style: 'avataaars',
+        seed: Math.random().toString(36).substring(7)
+    });
+
+    const [orisData, setOrisData] = useState<any>(null);
+
+    const getAvatarUrl = () => {
+        // Use the direct photo URL if provided
+        if (formData.linkedinPhoto) {
+            const url = formData.linkedinPhoto.trim();
+            if (url.startsWith('https://') || url.startsWith('http://')) {
+                return url;
+            }
+        }
+        return `https://api.dicebear.com/7.x/${avatarConfig.style}/svg?seed=${avatarConfig.seed}`;
+    };
+
+
+
+    const currentAvatarUrl = getAvatarUrl();
+
+    // Sync form with editingUser when modal opens
+    useEffect(() => {
+        if (isOpen && editingUser) {
+            const initialRole = editingUser.role || 'user';
+            const isSectorAdmin = initialRole.startsWith('admin-') && initialRole !== 'admin';
+
+            setFormData({
+                name: editingUser.name || '',
+                email: editingUser.email || '',
+                role: isSectorAdmin ? 'sector-admin' : initialRole,
+                selectedSectors: editingUser.sectors || [],
+                cargo: editingUser.cargo || '',
+                dt_admissao: editingUser.dt_admissao || '',
+                lotacao: editingUser.lotacao || '',
+                situacao: editingUser.situacao || '',
+                linkedinUrl: editingUser.linkedin_url || '',
+                linkedinPhoto: editingUser.linkedin_photo || '',
+            });
+
+            // Try to extract style and seed from existing avatar URL
+            const url = editingUser.avatar || '';
+            const styleMatch = url.match(/7\.x\/(.+?)\/svg/);
+            const seedMatch = url.match(/seed=(.+)/);
+
+            setAvatarConfig({
+                style: styleMatch ? styleMatch[1] : 'avataaars',
+                seed: seedMatch ? seedMatch[1] : (editingUser.name || 'default')
+            });
+
+            setOrisData({
+                Id: editingUser.id_oris,
+                CPF: editingUser.cpf,
+                Registro: editingUser.matricula_esocial
+            });
+            setOrisId(cleanOrisId(editingUser.id_oris));
+        } else if (isOpen) {
+            // Reset for new user — pré-seleciona os setores do gestor automaticamente
+            setFormData({
+                name: '',
+                email: '',
+                role: 'user',
+                selectedSectors: restrictedToSectors ? [...restrictedToSectors] : [],
+                cargo: '',
+                dt_admissao: '',
+                lotacao: '',
+                situacao: '',
+                linkedinUrl: '',
+                linkedinPhoto: '',
+            });
+            setAvatarConfig({
+                style: 'avataaars',
+                seed: Math.random().toString(36).substring(7)
+            });
+            setOrisData(null);
+            setOrisId('');
+        }
+    }, [isOpen, editingUser]);
+
+    const randomizeAvatar = () => {
+        setAvatarConfig(prev => ({
+            ...prev,
+            seed: Math.random().toString(36).substring(7)
+        }));
+    };
+
+    const handleFetchOris = async () => {
+        if (!orisId) {
+            toast.error('Informe o ID do funcionário na Oris');
+            return;
+        }
+
+        setIsFetching(true);
+        try {
+            const employee = await orisService.fetchFuncionario(orisId);
+            if (employee) {
+                setFormData({
+                    ...formData,
+                    name: employee.Nome,
+                    email: employee.Email || '',
+                    cargo: employee.Cargo,
+                    dt_admissao: orisService.parseOrisDate(employee.Admissao),
+                    lotacao: employee.Lotacao,
+                    situacao: employee.Situacao,
+                });
+                setOrisData(employee);
+                toast.success(`Dados de ${employee.Nome} carregados!`);
+            } else {
+                toast.error('Funcionário não encontrado na Oris');
+            }
+        } catch (error: any) {
+            toast.error(error.message || 'Erro ao consultar API Oris');
+        } finally {
+            setIsFetching(false);
+        }
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!formData.name || !formData.email) {
+            toast.error('Preencha os campos obrigatórios');
+            return;
+        }
+
+        if (formData.selectedSectors.length === 0) {
+            toast.error('Selecione pelo menos um setor');
+            return;
+        }
+
+        const userToSave = {
+            id: editingUser?.id || Math.random().toString(36).substr(2, 9),
+            name: formData.name,
+            email: formData.email,
+            avatar: currentAvatarUrl,
+            // Lógica de Role Hierárquica
+            role: (isRestricted && restrictedToSectors && restrictedToSectors.length > 0)
+                ? `user-${restrictedToSectors[0]}` // Sub-usuário (criado por gestor)
+                : formData.role === 'sector-admin' && formData.selectedSectors.length > 0
+                    ? `admin-${formData.selectedSectors[0]}` // Admin de Setor (criado por admin global)
+                    : formData.role as any,
+            sectors: formData.selectedSectors as any,
+            id_oris: cleanOrisId(orisData?.Id || orisId),
+            linkedin_url: formData.linkedinUrl,
+            linkedin_photo: formData.linkedinPhoto,
+            cpf: orisData?.CPF,
+            matricula_esocial: orisData?.Registro,
+            cargo: formData.cargo,
+            dt_admissao: formData.dt_admissao,
+            lotacao: formData.lotacao,
+            situacao: formData.situacao
+        };
+
+        onUserAdded(userToSave);
+        onOpenChange(false);
+    };
+
+    const toggleSector = (sectorId: string) => {
+        setFormData((prev: any) => ({
+            ...prev,
+            selectedSectors: prev.selectedSectors.includes(sectorId)
+                ? prev.selectedSectors.filter((id: string) => id !== sectorId)
+                : [...prev.selectedSectors, sectorId]
+        }));
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-4xl w-[95vw] max-h-[92vh] flex flex-col p-0 gap-0 overflow-hidden">
+                {/* Header */}
+                <div className="flex items-center gap-3 px-6 py-4 border-b border-white/10 shrink-0">
+                    <div className="p-2 rounded-xl bg-primary/10 border border-primary/20">
+                        {editingUser ? <Edit className="h-5 w-5 text-primary" /> : <UserPlus className="h-5 w-5 text-primary" />}
+                    </div>
+                    <div>
+                        <DialogTitle className="text-lg font-bold leading-tight">
+                            {editingUser ? 'Editar Usuário' : 'Cadastrar Novo Usuário'}
+                        </DialogTitle>
+                        <DialogDescription className="text-xs text-muted-foreground">
+                            {editingUser
+                                ? 'Atualize os dados do usuário ou busque novamente na Oris.'
+                                : 'Busque os dados na base corporativa Oris ou preencha manualmente.'}
+                        </DialogDescription>
+                    </div>
+                </div>
+
+                {/* Body — two columns */}
+                <div className="flex flex-1 overflow-hidden">
+
+                    {/* ── Left Panel: Avatar ──────────────────── */}
+                    <div className="w-64 shrink-0 flex flex-col items-center gap-5 p-6 border-r border-white/10 bg-muted/20 overflow-y-auto">
+                        {/* Avatar preview */}
+                        <div className="relative group mt-2">
+                            <div className="h-28 w-28 rounded-full border-4 border-background shadow-2xl overflow-hidden bg-background ring-2 ring-primary/20">
+                                <img
+                                    src={currentAvatarUrl}
+                                    alt="Avatar Preview"
+                                    className="h-full w-full object-cover"
+                                    onError={(e) => {
+                                        (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/${avatarConfig.style}/svg?seed=${avatarConfig.seed}`;
+                                    }}
+                                />
+                            </div>
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                size="icon"
+                                onClick={randomizeAvatar}
+                                className="absolute -bottom-1 -right-1 rounded-full shadow-lg border h-7 w-7"
+                                title="Randomizar avatar"
+                            >
+                                <RefreshCw className="h-3 w-3" />
+                            </Button>
+                        </div>
+
+                        <p className="text-xs text-muted-foreground text-center font-semibold uppercase tracking-widest">Estilo do Avatar</p>
+
+                        {/* Avatar style buttons */}
+                        <div className="flex flex-col gap-1.5 w-full">
+                            {AVATAR_STYLES.map(s => (
+                                <Button
+                                    key={s.id}
+                                    type="button"
+                                    variant={avatarConfig.style === s.id ? 'default' : 'ghost'}
+                                    size="sm"
+                                    className="text-xs h-8 w-full justify-start px-3"
+                                    onClick={() => setAvatarConfig(prev => ({ ...prev, style: s.id }))}
+                                >
+                                    {s.name}
+                                </Button>
+                            ))}
+                        </div>
+
+                        <div className="w-full border-t border-white/10 pt-4 space-y-3">
+                            <p className="text-xs text-muted-foreground font-semibold uppercase tracking-widest flex items-center gap-1.5">
+                                <Linkedin className="h-3.5 w-3.5 text-[#0A66C2]" /> LinkedIn
+                            </p>
+                            <div className="space-y-1.5">
+                                <label className="text-xs text-muted-foreground">Link do perfil</label>
+                                <Input
+                                    placeholder="linkedin.com/in/usuario"
+                                    value={formData.linkedinUrl}
+                                    onChange={(e) => setFormData({ ...formData, linkedinUrl: e.target.value })}
+                                    className="text-xs h-8"
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-xs text-muted-foreground">URL da foto</label>
+                                <Input
+                                    placeholder="media.licdn.com/..."
+                                    value={formData.linkedinPhoto}
+                                    onChange={(e) => setFormData({ ...formData, linkedinPhoto: e.target.value })}
+                                    className="text-xs h-8"
+                                />
+                                <p className="text-[10px] text-muted-foreground/70 leading-relaxed">
+                                    Clique na foto → botão direito → "Copiar endereço da imagem"
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ── Right Panel: Form ───────────────────── */}
+                    <div className="flex-1 overflow-y-auto">
+                        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+
+                            {/* Oris Search */}
+                            <div className="bg-muted/40 p-3 rounded-xl border border-dashed border-white/10">
+                                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Buscar na Base Oris</p>
+                                <div className="flex gap-2">
+                                    <Input
+                                        id="orisId"
+                                        placeholder="ID do Funcionário (ex: 2045)"
+                                        value={orisId}
+                                        onChange={(e) => setOrisId(cleanOrisId(e.target.value))}
+                                        className="h-9"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        onClick={handleFetchOris}
+                                        disabled={isFetching}
+                                        className="gap-2 shrink-0 h-9"
+                                    >
+                                        {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                                        Puxar Dados
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {/* Nome + Email */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="name" className="text-sm">Nome Completo</Label>
+                                    <Input
+                                        id="name"
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="email" className="text-sm">E-mail</Label>
+                                    <Input
+                                        id="email"
+                                        type="email"
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Cargo + Data Admissão */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="cargo" className="text-sm">Cargo</Label>
+                                    <Input
+                                        id="cargo"
+                                        value={formData.cargo}
+                                        onChange={(e) => setFormData({ ...formData, cargo: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="dt_admissao" className="text-sm">Data Admissão</Label>
+                                    <Input
+                                        id="dt_admissao"
+                                        value={formData.dt_admissao}
+                                        onChange={(e) => setFormData({ ...formData, dt_admissao: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Lotação + Situação */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="lotacao" className="text-sm">Lotação</Label>
+                                    <Input
+                                        id="lotacao"
+                                        value={formData.lotacao}
+                                        onChange={(e) => setFormData({ ...formData, lotacao: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="situacao" className="text-sm">Situação</Label>
+                                    <Input
+                                        id="situacao"
+                                        value={formData.situacao}
+                                        onChange={(e) => setFormData({ ...formData, situacao: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Função */}
+                            {isRestricted ? (
+                                // Gestores só podem criar usuários comuns
+                                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-muted/30 border border-white/10">
+                                    <User className="w-4 h-4 text-blue-400" />
+                                    <span className="text-sm font-medium">Colaborador (Usuário Comum)</span>
+                                    <span className="ml-auto text-xs text-muted-foreground">Função fixa</span>
+                                </div>
+                            ) : (
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="role" className="text-sm">Função no Sistema</Label>
+                                    <Select
+                                        value={formData.role}
+                                        onValueChange={(val) => setFormData({ ...formData, role: val })}
+                                    >
+                                        <SelectTrigger className="rounded-xl border-white/10 bg-muted/20">
+                                            <SelectValue placeholder="Selecione a função" />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-background border-white/10">
+                                            <SelectItem value="user">Colaborador (Usuário)</SelectItem>
+                                            <SelectItem value="sector-admin">Administrador de Setor</SelectItem>
+                                            <SelectItem value="admin">Administrador Global</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
+
+                            {/* Setores */}
+                            <div className="space-y-2">
+                                <Label className="text-sm">Setores com Acesso</Label>
+                                {isRestricted && (
+                                    <p className="text-xs text-muted-foreground">Você pode vincular apenas setores que você gerencia.</p>
+                                )}
+                                <div className="grid grid-cols-3 gap-2 border border-white/10 rounded-xl p-3 bg-muted/20">
+                                    {availableSectors.map((sector) => (
+                                        <div key={sector.id} className="flex items-center space-x-2">
+                                            <Checkbox
+                                                id={`sector-${sector.id}`}
+                                                checked={formData.selectedSectors.includes(sector.id)}
+                                                onCheckedChange={() => toggleSector(sector.id)}
+                                            />
+                                            <label
+                                                htmlFor={`sector-${sector.id}`}
+                                                className="text-sm font-medium leading-none cursor-pointer"
+                                            >
+                                                {sector.name}
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex justify-end gap-3 pt-2 border-t border-white/10">
+                                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                                    Cancelar
+                                </Button>
+                                <Button type="submit" className="gap-2">
+                                    {editingUser ? 'Salvar Alterações' : 'Cadastrar Usuário'}
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+}

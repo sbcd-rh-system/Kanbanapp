@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(sqlite3 db/kanban.db \"SELECT * FROM usuarios LIMIT 1; SELECT * FROM tarefas LIMIT 1;\" 2>&1 || echo \"SQLite CLI not available, trying node...\")",
+      "Bash(node -e \"\nconst Database = require\\('better-sqlite3'\\);\nconst db = new Database\\('db/kanban.db'\\);\n\nconsole.log\\('=== Users ==='\\);\nconst users = db.prepare\\('SELECT * FROM usuarios'\\).all\\(\\);\nconsole.log\\('Count:', users.length\\);\nif \\(users.length > 0\\) {\n  console.log\\('First user:', JSON.stringify\\(users[0], null, 2\\)\\);\n}\n\nconsole.log\\('\\\\\\\\n=== Tasks ==='\\);\nconst tasks = db.prepare\\('SELECT * FROM tarefas'\\).all\\(\\);\nconsole.log\\('Count:', tasks.length\\);\nif \\(tasks.length > 0\\) {\n  console.log\\('First task:', JSON.stringify\\(tasks[0], null, 2\\)\\);\n}\n\ndb.close\\(\\);\n\" 2>&1)",
+      "Bash(curl -s http://localhost:3002/api/users 2>&1 | head -50)",
+      "Bash(curl -s http://localhost:3002/api/tasks 2>&1 | head -50)",
+      "Bash(curl -s http://localhost:5173/api/users 2>&1 | head -10)",
+      "Bash(curl -s http://localhost:3002/api/users 2>&1 | head -5)",
+      "Bash(curl -s http://localhost:5173/api/users 2>&1 | head -5)",
+      "Bash(node server.js)",
+      "Bash(sleep 2 && curl -s http://localhost:3002/api/users | head -1)",
+      "Bash(sleep 1 && curl -s http://localhost:3002/api/users 2>&1 | head -1)"
+    ]
+  }
+}
