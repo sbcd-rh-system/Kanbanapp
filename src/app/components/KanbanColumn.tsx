@@ -26,10 +26,8 @@ export function KanbanColumn({
 }: KanbanColumnProps) {
   const [{ isOver }, drop] = useDrop({
     accept: 'TASK',
-    drop: (item: { id: string; status: TaskStatus }) => {
-      if (item.status !== status) {
-        onDrop(item.id, status);
-      }
+    drop: (item: { id: string; status: TaskStatus; projectId?: string }) => {
+      onDrop(item.id, status);
     },
     collect: (monitor) => ({
       isOver: monitor.isOver(),
@@ -78,7 +76,7 @@ export function KanbanColumn({
       </div>
 
       <div
-        ref={drop}
+        ref={(node) => { drop(node); }}
         className={`flex-1 p-3 space-y-4 overflow-y-auto rounded-3xl border transition-all duration-300 no-scrollbar ${isOver
           ? `${style.border} ${style.bg} backdrop-blur-md shadow-2xl`
           : 'border-transparent bg-white/[0.01]'

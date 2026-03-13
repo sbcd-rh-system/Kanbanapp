@@ -184,6 +184,25 @@ export default function KanbanView() {
     }
   };
 
+  const moveTaskToProject = async (taskId: string, newStatus: TaskStatus, newProjectId?: string) => {
+    try {
+      const taskToMove = tasks.find(t => t.id === taskId);
+      if (!taskToMove) return;
+
+      const updatedTask = {
+        ...taskToMove,
+        status: newStatus,
+        projectId: newProjectId // undefined remove do projeto (torna avulsa)
+      };
+
+      await taskService.saveTask(updatedTask);
+      toast.success('Tarefa movida com sucesso!');
+      setBoardKey(prev => prev + 1); // Força refresh de todos os boards
+    } catch (error) {
+      toast.error('Erro ao mover tarefa');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/30">
       {/* Premium Header */}
@@ -395,10 +414,10 @@ export default function KanbanView() {
                   const ProjectHeader = ({ project }: { project: typeof p }) => {
                     const [{ isOver }, drop] = useDrop({
                       accept: 'TASK',
-                      drop: (item: { id: string; projectId?: string }) => {
-                        // Só permite drop se a tarefa for avulsa (projectId undefined ou null)
-                        if (!item.projectId) {
-                          moveTaskToProject(item.id, project.id);
+                      drop: (item: { id: string; status: TaskStatus; projectId?: string }) => {
+                        // Sempre permite drop se for um projeto diferente
+                        if (item.projectId !== project.id) {
+                          moveTaskToProject(item.id, item.status, project.id);
                         }
                       },
                       collect: (monitor) => ({
@@ -408,10 +427,10 @@ export default function KanbanView() {
 
                     return (
                       <div
-                        ref={drop}
+                        ref={(node) => { drop(node); }}
                         className={`flex items-center gap-4 px-2 py-2 rounded-xl transition-all cursor-pointer ${isOver ? 'bg-primary/20 border border-primary/30' : ''}`}
                         onClick={() => setSelectedProjectId(project.id)}
-                        title="Arraste tarefas avulsas aqui para movê-las para este projeto"
+                        title="Arraste tarefas aqui para movê-las para este projeto"
                       >
                         <div className="h-3 w-3 rounded-full" style={{ backgroundColor: project.color || sector.color }} />
                         <div className="flex flex-col">
@@ -442,6 +461,7 @@ export default function KanbanView() {
                           onEditTask={handleEditTask}
                           onViewConnections={handleViewConnections}
                           onAddTask={handleCreateTask}
+                          onTaskMove={moveTaskToProject}
                           userId={currentUser.id}
                           userRole={currentUser.role}
                           showConnections={showConnections}
@@ -464,7 +484,7 @@ export default function KanbanView() {
                   <h2 className="text-lg font-black uppercase tracking-widest">Tarefas Avulsas</h2>
                   <div className="flex-1 h-px bg-white/5" />
                   <span className="text-[10px] text-muted-foreground/60 font-bold uppercase">
-                    Arraste para um projeto acima
+                    Arraste para cá para tornar avulsa
                   </span>
                 </div>
                 <div className="bg-white/[0.01] border border-white/5 rounded-[2rem] p-6 shadow-3xl">
@@ -475,6 +495,7 @@ export default function KanbanView() {
                     onEditTask={handleEditTask}
                     onViewConnections={handleViewConnections}
                     onAddTask={handleCreateTask}
+                    onTaskMove={(id, status) => moveTaskToProject(id, status, undefined)}
                     userId={currentUser.id}
                     userRole={currentUser.role}
                     showConnections={showConnections}
@@ -491,6 +512,7 @@ export default function KanbanView() {
                 onEditTask={handleEditTask}
                 onViewConnections={handleViewConnections}
                 onAddTask={handleCreateTask}
+                onTaskMove={(id, status) => moveTaskToProject(id, status, selectedProjectId)}
                 userId={currentUser.id}
                 userRole={currentUser.role}
                 showConnections={showConnections}

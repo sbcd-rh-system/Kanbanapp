@@ -13,6 +13,7 @@ interface KanbanBoardProps {
   onEditTask: (task: Task) => void;
   onViewConnections: (task: Task) => void;
   onAddTask?: (status: TaskStatus) => void;
+  onTaskMove?: (taskId: string, newStatus: TaskStatus, newProjectId?: string) => void;
   userId?: string;
   userRole?: string;
   showConnections?: boolean;
@@ -26,6 +27,7 @@ export function KanbanBoard({
   onEditTask,
   onViewConnections,
   onAddTask,
+  onTaskMove,
   userId,
   userRole,
   showConnections = true,
@@ -61,10 +63,15 @@ export function KanbanBoard({
   }, [sectorId, projectId, userId, userRole, tasks.length]); // Added tasks.length to refresh on local changes if needed, though handleDrop updates state
 
   const handleDrop = async (taskId: string, newStatus: TaskStatus) => {
+    if (onTaskMove) {
+      onTaskMove(taskId, newStatus, targetProjectId);
+      return;
+    }
+
     const taskToUpdate = tasks.find(t => t.id === taskId);
     if (!taskToUpdate) return;
 
-    // Se tem targetProjectId e a tarefa é avulsa, atribuir ao projeto
+    // Se tem targetProjectId, atribuir ao projeto
     const updatedTask = {
       ...taskToUpdate,
       status: newStatus,
