@@ -28,6 +28,11 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!currentUser) {
+      navigate('/');
+      return;
+    }
+
     async function loadData() {
       try {
         const [loadedTasks, loadedUsers] = await Promise.all([
@@ -46,8 +51,10 @@ export default function Dashboard() {
   }, []);
 
   // Hierarquia de roles: 'admin' = global, 'admin-{sectorId}' = admin setorial, outros = viewer
-  const isGlobalAdmin = currentUser.role === 'admin';
-  const isSectorAdmin = currentUser.role.startsWith('admin-') && currentUser.role !== 'admin';
+  const isGlobalAdmin = currentUser?.role === 'admin';
+  const isSectorAdmin = currentUser?.role?.startsWith('admin-') && currentUser?.role !== 'admin';
+
+  if (!currentUser) return null;
   const isAdmin = isGlobalAdmin; // alias de retrocompatibilidade
 
   // Setores visíveis por nível

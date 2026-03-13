@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -7,12 +7,20 @@ import { Label } from '../components/ui/label';
 import { setCurrentUser } from '../data/mockData';
 import { toast } from 'sonner';
 import { Briefcase, Lock, Mail } from 'lucide-react';
+import { getCurrentUser } from '../data/mockData';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const user = getCurrentUser();
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

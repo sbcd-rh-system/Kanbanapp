@@ -9,7 +9,7 @@ import { UserRegistrationModal } from '../components/UserRegistrationModal';
 import { userService } from '../services/userService';
 import { cleanOrisId } from '../services/orisService';
 import { toast } from 'sonner';
-import { getCurrentUser, sectors } from '../data/mockData';
+import { getCurrentUser, sectors, logoutUser } from '../data/mockData';
 
 // Helper: extrai o sectorId de um role do tipo 'admin-xxx' ou 'user-xxx'
 function getSectorFromRole(role: string): string | null {
@@ -385,7 +385,13 @@ export default function UserManagement() {
   const [editingUser, setEditingUser] = useState<any>(null);
   const [activeRestriction, setActiveRestriction] = useState<string[] | undefined>(undefined);
 
-  useEffect(() => { loadUsers(); }, []);
+  useEffect(() => {
+    if (!currentUser) {
+      navigate('/');
+      return;
+    }
+    loadUsers();
+  }, []);
 
   const loadUsers = async () => {
     try {
@@ -431,17 +437,17 @@ export default function UserManagement() {
     setIsModalOpen(true);
   };
 
-  const isGlobalAdmin = currentUser.role === 'admin';
-  const isSectorAdmin = currentUser.role.startsWith('admin-') && currentUser.role !== 'admin';
+  const isGlobalAdmin = currentUser?.role === 'admin';
+  const isSectorAdmin = currentUser?.role?.startsWith('admin-') && currentUser?.role !== 'admin';
   // Para retrocompatibilidade, 'isAdmin' significa poder gerenciar usuários globalmente
   const isAdmin = isGlobalAdmin;
   const canManageUsers = isGlobalAdmin || isSectorAdmin;
 
   // Setores do usuário logado
   const userSectorIds: string[] = isSectorAdmin
-    ? [currentUser.role.replace('admin-', '')] // extrai do role: 'admin-recruitment' -> ['recruitment']
-    : Array.isArray(currentUser.sectors)
-      ? currentUser.sectors
+    ? [currentUser?.role?.replace('admin-', '') || ''] 
+    : Array.isArray(currentUser?.sectors)
+      ? currentUser!.sectors
       : [];
 
   const filteredUsers = users
@@ -500,6 +506,8 @@ export default function UserManagement() {
     return uSectors.some(s => userSectorIds.includes(s));
   };
 
+  if (!currentUser) return null;
+
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/30">
       {/* Header */}
@@ -554,20 +562,20 @@ export default function UserManagement() {
           {/* Usuário logado + botão sair */}
           <div className="flex items-center gap-3 pl-3 border-l border-white/10">
             <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
-              <UserAvatar name={currentUser.name} avatar={currentUser.avatar} size="sm" />
+              <UserAvatar name={currentUser!.name} avatar={currentUser!.avatar} size="sm" />
               <div className="hidden sm:block text-left">
-                <p className="text-sm font-bold leading-none truncate max-w-[120px]">{currentUser.name.split(' ')[0]}</p>
+                <p className="text-sm font-bold leading-none truncate max-w-[120px]">{currentUser!.name.split(' ')[0]}</p>
                 <p className="text-xs mt-0.5 font-semibold" style={{
                   color: isGlobalAdmin ? '#a78bfa' : isSectorAdmin ? '#fb923c' : '#60a5fa'
                 }}>
-                  {getRoleLabel(currentUser.role)}
+                  {getRoleLabel(currentUser!.role)}
                 </p>
               </div>
             </div>
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate('/')}
+              onClick={() => { logoutUser(); navigate('/'); }}
               title="Sair"
               className="rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors"
             >

@@ -9,7 +9,7 @@ import { MultiBackend, TouchTransition, MouseTransition } from 'dnd-multi-backen
 import { TaskModal } from '../components/TaskModal';
 import { ConnectionGraph } from '../components/ConnectionGraph';
 import { UserAvatar } from '../components/UserAvatar';
-import { getSectorById, getCurrentUser, sectors } from '../data/mockData';
+import { getSectorById, getCurrentUser, sectors, logoutUser } from '../data/mockData';
 import { Task, SectorId, TaskStatus, User, Project } from '../types';
 import { taskService } from '../services/taskService';
 import { userService } from '../services/userService';
@@ -67,6 +67,11 @@ export default function KanbanView() {
   const [newProjectName, setNewProjectName] = useState('');
 
   useEffect(() => {
+    if (!currentUser) {
+      navigate('/');
+      return;
+    }
+
     userService.listUsers().then(setUsers).catch(console.error);
     taskService.listTasks().then(setTasks).catch(console.error);
     if (sectorId) {
@@ -77,7 +82,9 @@ export default function KanbanView() {
         })
         .catch(console.error);
     }
-  }, [boardKey, sectorId]);
+  }, [boardKey, sectorId, currentUser, navigate]);
+
+  if (!currentUser) return null;
 
   const sector = sectorId ? getSectorById(sectorId) : null;
 
@@ -141,6 +148,7 @@ export default function KanbanView() {
   };
 
   const handleLogout = () => {
+    logoutUser();
     navigate('/');
   };
 

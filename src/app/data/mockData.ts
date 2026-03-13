@@ -222,24 +222,23 @@ export const tasks: Task[] = [
   },
 ];
 
-// Sessão por aba: usa sessionStorage para que cada aba tenha seu próprio usuário logado
+// Sessão: usa localStorage para persistência entre refreshes e fechamento de abas
 const SESSION_KEY = 'kanban_current_user';
 
-export const getCurrentUser = (): User => {
+export const getCurrentUser = (): User | null => {
   try {
-    const stored = sessionStorage.getItem(SESSION_KEY);
+    const stored = localStorage.getItem(SESSION_KEY);
     if (stored) return JSON.parse(stored) as User;
   } catch { }
-  // Fallback: primeiro admin da lista
-  return users[0];
+  return null;
 };
 
 export const setCurrentUser = (user: User) => {
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify(user));
+  localStorage.setItem(SESSION_KEY, JSON.stringify(user));
 };
 
 export const logoutUser = () => {
-  sessionStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(SESSION_KEY);
 };
 
 export const getSectorById = (id: SectorId) => sectors.find(s => s.id === id);
