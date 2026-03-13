@@ -2,7 +2,7 @@ export type UserRole = 'admin' | 'user';
 
 export type TaskStatus = 'todo' | 'in-progress' | 'review' | 'done';
 
-export type SectorId = 'recruitment' | 'compensation' | 'dho' | 'dp' | 'data';
+export type SectorId = 'recruitment' | 'compensation' | 'dho' | 'dp' | 'data' | 'edu-assistencial' | 'ensino-pesquisa';
 
 export interface User {
   id: string;

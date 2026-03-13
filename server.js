@@ -27,6 +27,13 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Inicializar Supabase de Funcionários (Oris Sync)
+const employeesUrl = process.env.SUPABASE_EMPLOYEES_URL;
+const employeesKey = process.env.SUPABASE_EMPLOYEES_KEY;
+const supabaseEmployees = (employeesUrl && employeesKey) 
+    ? createClient(employeesUrl, employeesKey)
+    : null;
+
 // Rota para buscar usuários
 app.get('/api/users', async (req, res) => {
     try {
@@ -168,6 +175,55 @@ app.delete('/api/tasks/:id', async (req, res) => {
         res.json({ message: 'Tarefa removida com sucesso' });
     } catch (error) {
         console.error('Erro ao deletar tarefa:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// --- ROTAS DO BANCO DE FUNCIONÁRIOS (ORIS SYNC) ---
+
+app.get('/api/employees/search', async (req, res) => {
+    if (!supabaseEmployees) return res.status(503).json({ error: 'Serviço de funcionários não configurado' });
+    
+    const { q } = req.query;
+    if (!q) return res.json([]);
+
+    try {
+        const isNumeric = !isNaN(q);
+        let queryBuilder = supabaseEmployees
+            .from('oris_funcionarios')
+            .select('*');
+        
+        if (isNumeric) {
+            queryBuilder = queryBuilder.or(`id.eq.${q},nome.ilike.%${q}%`);
+        } else {
+            queryBuilder = queryBuilder.ilike('nome', `%${q}%`);
+        }
+
+        const { data, error } = await queryBuilder.limit(10);
+
+        if (error) throw error;
+        res.json(data);
+    } catch (error) {
+        console.error('Erro ao buscar funcionários:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get('/api/employees/:id', async (req, res) => {
+    if (!supabaseEmployees) return res.status(503).json({ error: 'Serviço de funcionários não configurado' });
+
+    const { id } = req.params;
+    try {
+        const { data, error } = await supabaseEmployees
+            .from('oris_funcionarios')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (error) throw error;
+        res.json(data);
+    } catch (error) {
+        console.error('Erro ao obter funcionário:', error);
         res.status(500).json({ error: error.message });
     }
 });

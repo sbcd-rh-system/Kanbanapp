@@ -4,6 +4,8 @@ import { Button } from '../components/ui/button';
 import { KanbanBoard } from '../components/KanbanBoard';
 import { DndProvider, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import { TouchBackend } from 'react-dnd-touch-backend';
+import { MultiBackend, TouchTransition, MouseTransition } from 'dnd-multi-backend';
 import { TaskModal } from '../components/TaskModal';
 import { ConnectionGraph } from '../components/ConnectionGraph';
 import { UserAvatar } from '../components/UserAvatar';
@@ -203,6 +205,23 @@ export default function KanbanView() {
     }
   };
 
+  const HTML5toTouch = {
+    backends: [
+      {
+        id: 'html5',
+        backend: HTML5Backend,
+        transition: MouseTransition,
+      },
+      {
+        id: 'touch',
+        backend: TouchBackend,
+        options: { enableMouseEvents: true },
+        preview: true,
+        transition: TouchTransition,
+      },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/30">
       {/* Premium Header */}
@@ -234,10 +253,10 @@ export default function KanbanView() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <Button onClick={() => handleCreateTask()} className="gradient-blue shadow-lg shadow-blue-500/20 border-none h-10 px-4 rounded-xl gap-2 font-bold transition-all active:scale-95">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Button onClick={() => handleCreateTask()} className="gradient-blue shadow-lg shadow-blue-500/20 border-none h-9 sm:h-10 px-3 sm:px-4 rounded-xl gap-2 font-bold transition-all active:scale-95">
                 <Plus className="h-4 w-4" />
-                Nova Tarefa
+                <span className="hidden xs:inline">Nova Tarefa</span>
               </Button>
 
               <DropdownMenu>
@@ -404,8 +423,8 @@ export default function KanbanView() {
       )}
 
       {/* Kanban Board Container */}
-      <main className="container mx-auto px-6 py-8 space-y-12">
-        <DndProvider backend={HTML5Backend}>
+      <main className="container mx-auto px-4 md:px-6 py-6 md:py-8 space-y-8 md:space-y-12">
+        <DndProvider backend={MultiBackend} options={HTML5toTouch}>
           {selectedProjectId === 'all' ? (
             <>
               {projects.length > 0 ? (

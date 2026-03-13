@@ -64,7 +64,7 @@ export function KanbanColumn({
   const style = statusStyles[status];
 
   return (
-    <div className="flex flex-col h-full min-w-[320px] max-w-[320px] w-full">
+    <div className="flex flex-col h-full min-w-[85vw] sm:min-w-[320px] md:max-w-[350px] w-full">
       <div className="mb-4 px-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${style.dot} shadow-[0_0_8px_rgba(0,0,0,0.5)] shadow-current`} />

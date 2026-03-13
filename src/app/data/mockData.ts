@@ -6,6 +6,8 @@ export const sectors: Sector[] = [
   { id: 'dho', name: 'DHO', color: '#fde047', icon: 'clipboard-list' },
   { id: 'dp', name: 'DP', color: '#f9a8d4', icon: 'briefcase-business' },
   { id: 'data', name: 'Dados', color: '#6366f1', icon: 'database' },
+  { id: 'edu-assistencial', name: 'Educação Assistencial', color: '#f87171', icon: 'graduation-cap' },
+  { id: 'ensino-pesquisa', name: 'Ensino e Pesquisa', color: '#fbbf24', icon: 'microscope' },
 ];
 
 export const users: User[] = [
@@ -15,7 +17,7 @@ export const users: User[] = [
     email: 'admin@empresa.com',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin',
     role: 'admin',
-    sectors: ['recruitment', 'compensation', 'dho', 'dp', 'data'],
+    sectors: ['recruitment', 'compensation', 'dho', 'dp', 'data', 'edu-assistencial', 'ensino-pesquisa'],
   },
   {
     id: '2',
@@ -44,11 +46,11 @@ export const users: User[] = [
 ];
 
 export const projects: Project[] = [
-  { id: 'proj-1', name: 'Contratação Tech 2026', sectorId: 'recruitment', createdAt: '2026-01-01', color: '#67e8f9' },
-  { id: 'proj-2', name: 'Revisão Salarial Anual', sectorId: 'compensation', createdAt: '2026-01-01', color: '#86efac' },
-  { id: 'proj-3', name: 'Cultura e Engajamento', sectorId: 'dho', createdAt: '2026-01-01', color: '#fde047' },
-  { id: 'proj-4', name: 'Digitalização de Benefícios', sectorId: 'dp', createdAt: '2026-01-01', color: '#f9a8d4' },
-  { id: 'proj-5', name: 'Data Pipeline RH', sectorId: 'data', createdAt: '2026-01-01', color: '#6366f1' },
+  { id: 'proj-1', name: 'Contratação Tech 2026', sectorId: 'recruitment', createdAt: '2026-01-01', color: '#67e8f9', createdBy: '1' },
+  { id: 'proj-2', name: 'Revisão Salarial Anual', sectorId: 'compensation', createdAt: '2026-01-01', color: '#86efac', createdBy: '1' },
+  { id: 'proj-3', name: 'Cultura e Engajamento', sectorId: 'dho', createdAt: '2026-01-01', color: '#fde047', createdBy: '1' },
+  { id: 'proj-4', name: 'Digitalização de Benefícios', sectorId: 'dp', createdAt: '2026-01-01', color: '#f9a8d4', createdBy: '1' },
+  { id: 'proj-5', name: 'Data Pipeline RH', sectorId: 'data', createdAt: '2026-01-01', color: '#6366f1', createdBy: '1' },
 ];
 
 export const tasks: Task[] = [

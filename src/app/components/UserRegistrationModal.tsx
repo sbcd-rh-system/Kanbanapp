@@ -39,6 +39,10 @@ export function UserRegistrationModal({ isOpen, onOpenChange, onUserAdded, editi
         : sectors;
     const isRestricted = !!restrictedToSectors;
 
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
+
     // Form State
     const [formData, setFormData] = useState({
         name: '',
@@ -51,6 +55,12 @@ export function UserRegistrationModal({ isOpen, onOpenChange, onUserAdded, editi
         situacao: '',
         linkedinUrl: '',    // Link do perfil → usado no badge
         linkedinPhoto: '',  // URL direta da foto → usado no avatar
+    });
+
+    const [orisData, setOrisData] = useState({
+        id: '',
+        cpf: '',
+        registro: ''
     });
 
     const [avatarConfig, setAvatarConfig] = useState({
@@ -130,6 +140,44 @@ export function UserRegistrationModal({ isOpen, onOpenChange, onUserAdded, editi
         }));
     };
 
+    const handleSearch = async (val: string) => {
+        setSearchQuery(val);
+        if (val.length < 3) {
+            setSearchResults([]);
+            return;
+        }
+
+        setIsSearching(true);
+        try {
+            const results = await orisService.searchFuncionarios(val);
+            setSearchResults(results);
+        } catch (error) {
+            console.error('Search error:', error);
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    const handleSelectEmployee = (emp: any) => {
+        setFormData({
+            ...formData,
+            name: emp.nome,
+            email: emp.email || '',
+            cargo: emp.cargo,
+            dt_admissao: orisService.formatDate(emp.dt_admissao),
+            lotacao: emp.lotacao,
+            situacao: emp.situacao,
+        });
+        setOrisData({
+            id: emp.id,
+            cpf: emp.cpf,
+            registro: emp.registro
+        });
+        setSearchResults([]);
+        setSearchQuery('');
+        toast.success(`Dados de ${emp.nome} carregados!`);
+    };
+
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -149,18 +197,17 @@ export function UserRegistrationModal({ isOpen, onOpenChange, onUserAdded, editi
             name: formData.name,
             email: formData.email,
             avatar: currentAvatarUrl,
-            // Lógica de Role Hierárquica
             role: (isRestricted && restrictedToSectors && restrictedToSectors.length > 0)
                 ? `user-${restrictedToSectors[0]}` // Sub-usuário (criado por gestor)
                 : formData.role === 'sector-admin' && formData.selectedSectors.length > 0
                     ? `admin-${formData.selectedSectors[0]}` // Admin de Setor (criado por admin global)
                     : formData.role as any,
             sectors: formData.selectedSectors as any,
-            id_oris: editingUser?.id_oris || '',
+            id_oris: orisData.id || editingUser?.id_oris || '',
             linkedin_url: formData.linkedinUrl,
             linkedin_photo: formData.linkedinPhoto,
-            cpf: editingUser?.cpf || '',
-            matricula_esocial: editingUser?.matricula_esocial || '',
+            cpf: orisData.cpf || editingUser?.cpf || '',
+            matricula_esocial: orisData.registro || editingUser?.matricula_esocial || '',
             cargo: formData.cargo,
             dt_admissao: formData.dt_admissao,
             lotacao: formData.lotacao,
@@ -192,8 +239,8 @@ export function UserRegistrationModal({ isOpen, onOpenChange, onUserAdded, editi
                         <DialogTitle className="text-lg font-bold leading-tight">
                             {editingUser ? 'Editar Usuário' : 'Cadastrar Novo Usuário'}
                         </DialogTitle>
-                        <DialogDescription className="text-xs text-muted-foreground">
-                            Preencha os dados do colaborador abaixo para salvar no sistema.
+                         <DialogDescription className="text-xs text-muted-foreground">
+                            Busque no banco corporativo por nome ou ID para preencher automaticamente.
                         </DialogDescription>
                     </div>
                 </div>
@@ -276,6 +323,45 @@ export function UserRegistrationModal({ isOpen, onOpenChange, onUserAdded, editi
                     {/* ── Right Panel: Form ───────────────────── */}
                     <div className="flex-1 overflow-y-auto">
                         <form onSubmit={handleSubmit} className="p-6 space-y-5">
+
+                            {/* Employee Search */}
+                            <div className="relative bg-muted/40 p-3 rounded-xl border border-dashed border-white/10 z-20">
+                                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Buscar Colaborador (Banco Corp.)</p>
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Digite nome ou ID..."
+                                        value={searchQuery}
+                                        onChange={(e) => handleSearch(e.target.value)}
+                                        className="pl-10 h-10 bg-background"
+                                    />
+                                    {isSearching && (
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Results Dropdown */}
+                                {searchResults.length > 0 && (
+                                    <div className="absolute left-0 right-0 mt-1 bg-background border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden max-h-60 overflow-y-auto">
+                                        {searchResults.map((emp) => (
+                                            <button
+                                                key={emp.id}
+                                                type="button"
+                                                onClick={() => handleSelectEmployee(emp)}
+                                                className="w-full flex flex-col items-start px-4 py-3 hover:bg-white/5 border-b border-white/5 last:border-0 transition-colors"
+                                            >
+                                                <span className="text-sm font-bold text-white">{emp.nome}</span>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className="text-[10px] uppercase font-bold text-muted-foreground bg-white/5 px-1.5 py-0.5 rounded">ID: {emp.id}</span>
+                                                    <span className="text-xs text-muted-foreground truncate">{emp.cargo} • {emp.lotacao}</span>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
 
 
                             {/* Nome + Email */}

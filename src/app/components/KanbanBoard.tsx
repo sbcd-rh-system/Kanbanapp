@@ -135,20 +135,21 @@ export function KanbanBoard({
         />
       ))}
 
-      {/* Colunas do Kanban */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 relative z-10">
+      {/* Colunas do Kanban - Flex com Scroll Horizontal no Mobile */}
+      <div className="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-4 overflow-x-auto md:overflow-x-visible pb-4 md:pb-0 no-scrollbar snap-x snap-mandatory relative z-10">
         {columns.map(column => (
-          <KanbanColumn
-            key={column.id}
-            title={column.title}
-            status={column.id}
-            tasks={tasks.filter(task => task.status === column.id)}
-            onDrop={handleDrop}
-            onEditTask={onEditTask}
-            onDeleteTask={handleDeleteTask}
-            onViewConnections={onViewConnections}
-            onAddTask={onAddTask}
-          />
+          <div key={column.id} className="snap-center md:snap-align-none shrink-0 first:ml-0 last:mr-0">
+            <KanbanColumn
+              title={column.title}
+              status={column.id}
+              tasks={tasks.filter(task => task.status === column.id)}
+              onDrop={handleDrop}
+              onEditTask={onEditTask}
+              onDeleteTask={handleDeleteTask}
+              onViewConnections={onViewConnections}
+              onAddTask={onAddTask}
+            />
+          </div>
         ))}
       </div>
     </div>

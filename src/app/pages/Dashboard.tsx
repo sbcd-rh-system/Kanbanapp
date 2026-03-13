@@ -81,21 +81,21 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/30">
       {/* Premium Header */}
       <header className="sticky top-0 z-50 w-full border-b border-white/5 bg-background/80 backdrop-blur-xl">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl gradient-blue flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <LayoutDashboard className="h-6 w-6 text-white" />
+        <div className="container mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl gradient-blue flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <LayoutDashboard className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight">Central de Controle</h1>
-              <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">Kanban System</p>
+              <h1 className="text-lg sm:text-xl font-bold tracking-tight">Central de Controle</h1>
+              <p className="hidden xs:block text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Kanban System</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
-              <UserAvatar name={currentUser.name} avatar={currentUser.avatar} size="sm" />
-              <div className="hidden sm:block text-left">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
+              <UserAvatar name={currentUser.name} avatar={currentUser.avatar} size="xs" />
+              <div className="hidden md:block text-left">
                 <p className="text-sm font-bold leading-none">{currentUser.name}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{currentUser.role === 'admin' ? 'Administrador' : 'Usuário'}</p>
               </div>
@@ -104,7 +104,7 @@ export default function Dashboard() {
               variant="ghost"
               size="icon"
               onClick={handleLogout}
-              className="rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors"
             >
               <LogOut className="h-4 w-4" />
             </Button>
@@ -112,7 +112,7 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-10">
+      <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-10">
         {/* Welcome Section */}
         <div className="mb-10">
           <h2 className="text-3xl font-bold tracking-tight mb-2 italic">Bem-vindo, <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">{currentUser.name.split(' ')[0]}!</span></h2>
@@ -187,9 +187,10 @@ export default function Dashboard() {
                         {sector.id === 'recruitment' ? '👥' :
                           sector.id === 'compensation' ? '💰' :
                             sector.id === 'dho' ? '📋' :
-                              sector.id === 'training' ? '🎓' :
                                 sector.id === 'dp' ? '💼' :
-                                  sector.id === 'data' ? '💾' : '📊'}
+                                  sector.id === 'data' ? '💾' :
+                                    sector.id === 'edu-assistencial' ? '🎓' :
+                                      sector.id === 'ensino-pesquisa' ? '🔬' : '📊'}
                       </span>
                     </div>
                     <div className="text-right">
