@@ -25,11 +25,4 @@ export const userService = {
         if (!response.ok) throw new Error('Falha ao remover usuário');
     },
 
-    async syncOris(): Promise<void> {
-        // Assuming axios is not available, using fetch as per existing methods
-        const response = await fetch(`${API_URL}/sync-oris`, {
-            method: 'POST',
-        });
-        if (!response.ok) throw new Error('Falha ao sincronizar Oris');
-    }
 };

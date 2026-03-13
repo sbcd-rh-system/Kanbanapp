@@ -381,7 +381,6 @@ export default function UserManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isSyncing, setIsSyncing] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
   const [activeRestriction, setActiveRestriction] = useState<string[] | undefined>(undefined);
@@ -407,19 +406,6 @@ export default function UserManagement() {
       setEditingUser(null);
     } catch {
       toast.error(editingUser ? 'Erro ao atualizar usuário' : 'Erro ao cadastrar usuário');
-    }
-  };
-
-  const handleSyncOris = async () => {
-    setIsSyncing(true);
-    try {
-      await userService.syncOris();
-      await loadUsers();
-      toast.success('Sincronização com Oris concluída!');
-    } catch {
-      toast.error('Erro ao sincronizar com Oris');
-    } finally {
-      setIsSyncing(false);
     }
   };
 
@@ -544,17 +530,6 @@ export default function UserManagement() {
           {/* Admin global: sync + novo usuário completo */}
           {isGlobalAdmin && (
             <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                onClick={handleSyncOris}
-                disabled={isSyncing}
-                className="border-white/10 bg-white/5 hover:bg-white/10 text-sm font-bold gap-2 h-10 px-4 rounded-xl shadow-lg transition-all active:scale-95"
-              >
-                {isSyncing
-                  ? <Loader2 className="h-4 w-4 animate-spin text-blue-400" />
-                  : <RefreshCw className="h-4 w-4 text-blue-400" />}
-                {isSyncing ? 'Sincronizando...' : 'Sincronizar Oris'}
-              </Button>
               <Button
                 onClick={() => { setEditingUser(null); setIsModalOpen(true); }}
                 className="gradient-blue shadow-lg shadow-blue-500/20 border-none h-10 px-4 rounded-xl gap-2 font-bold transition-all active:scale-95"

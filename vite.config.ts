@@ -26,12 +26,6 @@ export default defineConfig({
         target: 'http://localhost:3002',
         changeOrigin: true,
       },
-      '/oris-api': {
-        target: 'https://portal.orisrh.com:9878/apiV1',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/oris-api/, ''),
-        secure: false,
-      }
     }
   }
 })

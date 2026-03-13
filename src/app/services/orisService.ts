@@ -20,34 +20,7 @@ export function cleanOrisId(id: string | number | null | undefined): string {
     return idStr.split('.')[0];
 }
 
-// Proxied via vite.config.ts to bypass CORS
-const ORIS_PROXY_BASE = '/oris-api';
-
 export const orisService = {
-    /**
-     * Fetches an employee directly from the Oris API using the Vite proxy.
-     * @param id The employee ID (from Oris)
-     */
-    async fetchFuncionario(id: string | number): Promise<OrisEmployee | null> {
-        try {
-            const url = `/api/oris/obterFuncionario?id=${id}`;
-
-            const response = await fetch(url);
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Failed to fetch from Oris:', errorText);
-                throw new Error('Funcionário não encontrado ou erro na API Oris');
-            }
-
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            console.error('Oris Service Error:', error);
-            throw error;
-        }
-    },
-
     /**
      * Helper to parse Oris date format /Date(timestamp)/
      */

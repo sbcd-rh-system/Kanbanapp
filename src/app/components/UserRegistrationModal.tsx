@@ -39,9 +39,6 @@ export function UserRegistrationModal({ isOpen, onOpenChange, onUserAdded, editi
         : sectors;
     const isRestricted = !!restrictedToSectors;
 
-    const [orisId, setOrisId] = useState('');
-    const [isFetching, setIsFetching] = useState(false);
-
     // Form State
     const [formData, setFormData] = useState({
         name: '',
@@ -61,7 +58,6 @@ export function UserRegistrationModal({ isOpen, onOpenChange, onUserAdded, editi
         seed: Math.random().toString(36).substring(7)
     });
 
-    const [orisData, setOrisData] = useState<any>(null);
 
     const getAvatarUrl = () => {
         // Use the direct photo URL if provided
@@ -106,13 +102,6 @@ export function UserRegistrationModal({ isOpen, onOpenChange, onUserAdded, editi
                 style: styleMatch ? styleMatch[1] : 'avataaars',
                 seed: seedMatch ? seedMatch[1] : (editingUser.name || 'default')
             });
-
-            setOrisData({
-                Id: editingUser.id_oris,
-                CPF: editingUser.cpf,
-                Registro: editingUser.matricula_esocial
-            });
-            setOrisId(cleanOrisId(editingUser.id_oris));
         } else if (isOpen) {
             // Reset for new user — pré-seleciona os setores do gestor automaticamente
             setFormData({
@@ -131,8 +120,6 @@ export function UserRegistrationModal({ isOpen, onOpenChange, onUserAdded, editi
                 style: 'avataaars',
                 seed: Math.random().toString(36).substring(7)
             });
-            setOrisData(null);
-            setOrisId('');
         }
     }, [isOpen, editingUser]);
 
@@ -143,36 +130,6 @@ export function UserRegistrationModal({ isOpen, onOpenChange, onUserAdded, editi
         }));
     };
 
-    const handleFetchOris = async () => {
-        if (!orisId) {
-            toast.error('Informe o ID do funcionário na Oris');
-            return;
-        }
-
-        setIsFetching(true);
-        try {
-            const employee = await orisService.fetchFuncionario(orisId);
-            if (employee) {
-                setFormData({
-                    ...formData,
-                    name: employee.Nome,
-                    email: employee.Email || '',
-                    cargo: employee.Cargo,
-                    dt_admissao: orisService.parseOrisDate(employee.Admissao),
-                    lotacao: employee.Lotacao,
-                    situacao: employee.Situacao,
-                });
-                setOrisData(employee);
-                toast.success(`Dados de ${employee.Nome} carregados!`);
-            } else {
-                toast.error('Funcionário não encontrado na Oris');
-            }
-        } catch (error: any) {
-            toast.error(error.message || 'Erro ao consultar API Oris');
-        } finally {
-            setIsFetching(false);
-        }
-    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -199,11 +156,11 @@ export function UserRegistrationModal({ isOpen, onOpenChange, onUserAdded, editi
                     ? `admin-${formData.selectedSectors[0]}` // Admin de Setor (criado por admin global)
                     : formData.role as any,
             sectors: formData.selectedSectors as any,
-            id_oris: cleanOrisId(orisData?.Id || orisId),
+            id_oris: editingUser?.id_oris || '',
             linkedin_url: formData.linkedinUrl,
             linkedin_photo: formData.linkedinPhoto,
-            cpf: orisData?.CPF,
-            matricula_esocial: orisData?.Registro,
+            cpf: editingUser?.cpf || '',
+            matricula_esocial: editingUser?.matricula_esocial || '',
             cargo: formData.cargo,
             dt_admissao: formData.dt_admissao,
             lotacao: formData.lotacao,
@@ -236,9 +193,7 @@ export function UserRegistrationModal({ isOpen, onOpenChange, onUserAdded, editi
                             {editingUser ? 'Editar Usuário' : 'Cadastrar Novo Usuário'}
                         </DialogTitle>
                         <DialogDescription className="text-xs text-muted-foreground">
-                            {editingUser
-                                ? 'Atualize os dados do usuário ou busque novamente na Oris.'
-                                : 'Busque os dados na base corporativa Oris ou preencha manualmente.'}
+                            Preencha os dados do colaborador abaixo para salvar no sistema.
                         </DialogDescription>
                     </div>
                 </div>
@@ -322,29 +277,6 @@ export function UserRegistrationModal({ isOpen, onOpenChange, onUserAdded, editi
                     <div className="flex-1 overflow-y-auto">
                         <form onSubmit={handleSubmit} className="p-6 space-y-5">
 
-                            {/* Oris Search */}
-                            <div className="bg-muted/40 p-3 rounded-xl border border-dashed border-white/10">
-                                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Buscar na Base Oris</p>
-                                <div className="flex gap-2">
-                                    <Input
-                                        id="orisId"
-                                        placeholder="ID do Funcionário (ex: 2045)"
-                                        value={orisId}
-                                        onChange={(e) => setOrisId(cleanOrisId(e.target.value))}
-                                        className="h-9"
-                                    />
-                                    <Button
-                                        type="button"
-                                        variant="secondary"
-                                        onClick={handleFetchOris}
-                                        disabled={isFetching}
-                                        className="gap-2 shrink-0 h-9"
-                                    >
-                                        {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                                        Puxar Dados
-                                    </Button>
-                                </div>
-                            </div>
 
                             {/* Nome + Email */}
                             <div className="grid grid-cols-2 gap-4">

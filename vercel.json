@@ -1,5 +1,6 @@
 {
     "version": 2,
+    "cleanUrls": true,
     "builds": [
         {
             "src": "package.json",
@@ -17,6 +18,10 @@
         {
             "src": "/api/(.*)",
             "dest": "/api/index.js"
+        },
+        {
+            "src": "/assets/(.*)",
+            "dest": "/assets/$1"
         },
         {
             "src": "/(.*)",
