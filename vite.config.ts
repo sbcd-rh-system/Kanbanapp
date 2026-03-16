@@ -21,6 +21,7 @@ export default defineConfig({
   assetsInclude: ['**/*.svg', '**/*.csv'],
 
   server: {
+    port: 5180,
     proxy: {
       '/api': {
         target: 'http://localhost:3002',

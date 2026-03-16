@@ -17,7 +17,12 @@
       "Bash(curl -s http://localhost:5173/api/projects 2>&1)",
       "Bash(curl -s http://localhost:5173 2>&1 | head -5)",
       "Bash(cd \"C:\\\\Users\\\\mandy\\\\OneDrive - SOCIEDADE BRASILEIRA CAMINHO DE DAMASCO\\\\Apps\\\\Kanbanapp\" && npm run build 2>&1 | tail -20)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "mcp__claude_ai_Vercel__list_teams",
+      "mcp__claude_ai_Vercel__list_projects",
+      "Bash(curl:*)",
+      "Bash(netstat:*)",
+      "Bash(npm install:*)"
     ]
   }
 }
