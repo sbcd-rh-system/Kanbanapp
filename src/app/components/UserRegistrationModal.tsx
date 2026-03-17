@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { sectors } from '../data/mockData';
 import { orisService, cleanOrisId } from '../services/orisService';
 import { toast } from 'sonner';
-import { Search, UserPlus, Loader2, Edit, RefreshCw, Linkedin, User } from 'lucide-react';
+import { Search, UserPlus, Loader2, Edit, RefreshCw, User, Upload } from 'lucide-react';
 
 const AVATAR_STYLES = [
     { id: 'avataaars', name: 'Original' },
@@ -55,6 +55,7 @@ export function UserRegistrationModal({ isOpen, onOpenChange, onUserAdded, editi
         situacao: '',
         linkedinUrl: '',    // Link do perfil → usado no badge
         linkedinPhoto: '',  // URL direta da foto → usado no avatar
+        phone: '',
     });
 
     const [orisData, setOrisData] = useState({
@@ -69,11 +70,24 @@ export function UserRegistrationModal({ isOpen, onOpenChange, onUserAdded, editi
     });
 
 
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            setFormData(f => ({ ...f, linkedinPhoto: reader.result as string }));
+        };
+        reader.readAsDataURL(file);
+        e.target.value = '';
+    };
+
     const getAvatarUrl = () => {
         // Use the direct photo URL if provided
         if (formData.linkedinPhoto) {
             const url = formData.linkedinPhoto.trim();
-            if (url.startsWith('https://') || url.startsWith('http://')) {
+            if (url.startsWith('https://') || url.startsWith('http://') || url.startsWith('data:')) {
                 return url;
             }
         }
@@ -84,8 +98,16 @@ export function UserRegistrationModal({ isOpen, onOpenChange, onUserAdded, editi
 
     const currentAvatarUrl = getAvatarUrl();
 
-    // Sync form with editingUser when modal opens
-    useEffect(() => {
+    const formatPhone = (raw: string | number | null | undefined): string => {
+        if (!raw) return '';
+        const digits = raw.toString().replace(/\D/g, '');
+        if (digits.length === 11) return `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7)}`;
+        if (digits.length === 10) return `(${digits.slice(0,2)}) ${digits.slice(2,6)}-${digits.slice(6)}`;
+        return digits;
+    };
+
+    // Sync form with editingUser when modal opens (useLayoutEffect evita flash de campos vazios)
+    useLayoutEffect(() => {
         if (isOpen && editingUser) {
             const initialRole = editingUser.role || 'user';
             const isSectorAdmin = initialRole.startsWith('admin-') && initialRole !== 'admin';
@@ -94,13 +116,16 @@ export function UserRegistrationModal({ isOpen, onOpenChange, onUserAdded, editi
                 name: editingUser.name || '',
                 email: editingUser.email || '',
                 role: isSectorAdmin ? 'sector-admin' : initialRole,
-                selectedSectors: editingUser.sectors || [],
+                selectedSectors: Array.isArray(editingUser.sectors)
+                    ? editingUser.sectors
+                    : (typeof editingUser.sectors === 'string' ? JSON.parse(editingUser.sectors || '[]') : []),
                 cargo: editingUser.cargo || '',
                 dt_admissao: editingUser.dt_admissao || '',
                 lotacao: editingUser.lotacao || '',
                 situacao: editingUser.situacao || '',
                 linkedinUrl: editingUser.linkedin_url || '',
                 linkedinPhoto: editingUser.linkedin_photo || '',
+                phone: editingUser.phone || '',
             });
 
             // Try to extract style and seed from existing avatar URL
@@ -125,6 +150,7 @@ export function UserRegistrationModal({ isOpen, onOpenChange, onUserAdded, editi
                 situacao: '',
                 linkedinUrl: '',
                 linkedinPhoto: '',
+                phone: '',
             });
             setAvatarConfig({
                 style: 'avataaars',
@@ -132,6 +158,16 @@ export function UserRegistrationModal({ isOpen, onOpenChange, onUserAdded, editi
             });
         }
     }, [isOpen, editingUser]);
+
+    // Busca telefone do Oris se o usuário tem id_oris mas phone está vazio
+    useEffect(() => {
+        if (!isOpen || !editingUser?.id_oris || editingUser?.phone) return;
+        orisService.fetchFuncionario(editingUser.id_oris).then(emp => {
+            if (emp?.telefone_celular) {
+                setFormData(f => ({ ...f, phone: formatPhone(emp.telefone_celular) }));
+            }
+        });
+    }, [isOpen, editingUser?.id_oris]);
 
     const randomizeAvatar = () => {
         setAvatarConfig(prev => ({
@@ -161,12 +197,13 @@ export function UserRegistrationModal({ isOpen, onOpenChange, onUserAdded, editi
     const handleSelectEmployee = (emp: any) => {
         setFormData({
             ...formData,
-            name: emp.nome,
+            name: emp.nome || '',
             email: emp.email || '',
-            cargo: emp.cargo,
-            dt_admissao: orisService.formatDate(emp.dt_admissao),
-            lotacao: emp.lotacao,
-            situacao: emp.situacao,
+            cargo: emp.cargo || '',
+            dt_admissao: orisService.formatDate(emp.dt_admissao) || '',
+            lotacao: emp.lotacao || '',
+            phone: formatPhone(emp.telefone_celular),
+            situacao: emp.situacao || '',
         });
         setOrisData({
             id: emp.id,
@@ -203,13 +240,14 @@ export function UserRegistrationModal({ isOpen, onOpenChange, onUserAdded, editi
                     ? `admin-${formData.selectedSectors[0]}` // Admin de Setor (criado por admin global)
                     : formData.role as any,
             sectors: formData.selectedSectors as any,
-            id_oris: orisData.id || editingUser?.id_oris || '',
+            id_oris: orisData.id || editingUser?.id_oris || null,
             linkedin_url: formData.linkedinUrl,
             linkedin_photo: formData.linkedinPhoto,
-            cpf: orisData.cpf || editingUser?.cpf || '',
-            matricula_esocial: orisData.registro || editingUser?.matricula_esocial || '',
+            phone: formData.phone || null,
+            cpf: orisData.cpf || editingUser?.cpf || null,
+            matricula_esocial: orisData.registro || editingUser?.matricula_esocial || null,
             cargo: formData.cargo,
-            dt_admissao: formData.dt_admissao,
+            dt_admissao: formData.dt_admissao || null,
             lotacao: formData.lotacao,
             situacao: formData.situacao
         };
@@ -293,11 +331,20 @@ export function UserRegistrationModal({ isOpen, onOpenChange, onUserAdded, editi
                         </div>
 
                         <div className="w-full border-t border-white/10 pt-4 space-y-3">
-                            <p className="text-xs text-muted-foreground font-semibold uppercase tracking-widest flex items-center gap-1.5">
-                                <Linkedin className="h-3.5 w-3.5 text-[#0A66C2]" /> LinkedIn
+                            <p className="text-xs text-muted-foreground font-semibold uppercase tracking-widest">
+                                Contato e Redes Sociais
                             </p>
                             <div className="space-y-1.5">
-                                <label className="text-xs text-muted-foreground">Link do perfil</label>
+                                <label className="text-xs text-muted-foreground">Telefone / WhatsApp</label>
+                                <Input
+                                    placeholder="(11) 99999-9999"
+                                    value={formData.phone}
+                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                    className="text-xs h-8"
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-xs text-muted-foreground">Link do perfil (LinkedIn, etc.)</label>
                                 <Input
                                     placeholder="linkedin.com/in/usuario"
                                     value={formData.linkedinUrl}
@@ -307,14 +354,42 @@ export function UserRegistrationModal({ isOpen, onOpenChange, onUserAdded, editi
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-xs text-muted-foreground">URL da foto</label>
-                                <Input
-                                    placeholder="media.licdn.com/..."
-                                    value={formData.linkedinPhoto}
-                                    onChange={(e) => setFormData({ ...formData, linkedinPhoto: e.target.value })}
-                                    className="text-xs h-8"
-                                />
+                                <div className="flex gap-2">
+                                    <Input
+                                        placeholder="https://..."
+                                        value={formData.linkedinPhoto.startsWith('data:') ? '(arquivo enviado)' : formData.linkedinPhoto}
+                                        onChange={(e) => setFormData({ ...formData, linkedinPhoto: e.target.value })}
+                                        className="text-xs h-8 flex-1"
+                                        readOnly={formData.linkedinPhoto.startsWith('data:')}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="h-8 px-2.5 rounded-md border border-white/10 bg-white/5 hover:bg-white/10 transition-colors flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground shrink-0"
+                                        title="Enviar arquivo"
+                                    >
+                                        <Upload className="h-3.5 w-3.5" />
+                                        Upload
+                                    </button>
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={handleFileUpload}
+                                    />
+                                </div>
+                                {formData.linkedinPhoto.startsWith('data:') && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData(f => ({ ...f, linkedinPhoto: '' }))}
+                                        className="text-[10px] text-red-400/70 hover:text-red-400 transition-colors"
+                                    >
+                                        Remover arquivo
+                                    </button>
+                                )}
                                 <p className="text-[10px] text-muted-foreground/70 leading-relaxed">
-                                    Clique na foto → botão direito → "Copiar endereço da imagem"
+                                    Cole uma URL ou faça upload de um arquivo.
                                 </p>
                             </div>
                         </div>

@@ -22,7 +22,15 @@
       "mcp__claude_ai_Vercel__list_projects",
       "Bash(curl:*)",
       "Bash(netstat:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "WebSearch",
+      "WebFetch(domain:supabase.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(claude mcp:*)",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__apply_migration",
+      "Bash(cd:*)"
     ]
   }
 }

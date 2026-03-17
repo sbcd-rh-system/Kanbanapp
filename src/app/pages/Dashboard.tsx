@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { sectors, getCurrentUser, logoutUser } from '../data/mockData';
@@ -8,6 +10,7 @@ import { userService } from '../services/userService';
 import { Task, User } from '../types';
 import { SectorBadge } from '../components/SectorBadge';
 import { UserAvatar } from '../components/UserAvatar';
+import { GerenteCard } from '../components/GerenteCard';
 import {
   LayoutDashboard,
   Users,
@@ -16,8 +19,11 @@ import {
   Clock,
   AlertCircle,
   ListTodo,
+  Plus,
 } from 'lucide-react';
 import { Badge } from '../components/ui/badge';
+
+const GERENTE_ORDER_KEY = 'kanban_gerente_order';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -49,6 +55,32 @@ export default function Dashboard() {
     }
     loadData();
   }, []);
+
+  const isChefe = currentUser?.role === 'chefe';
+  const gerentesRaw = users.filter(u => u.role === 'gerente');
+
+  const [gerenteOrder, setGerenteOrder] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem(GERENTE_ORDER_KEY) || '[]'); } catch { return []; }
+  });
+
+  const gerentes = gerentesRaw.length === 0 ? [] : (() => {
+    const ordered = gerenteOrder
+      .map(id => gerentesRaw.find(g => g.id === id))
+      .filter(Boolean) as User[];
+    const rest = gerentesRaw.filter(g => !gerenteOrder.includes(g.id));
+    return [...ordered, ...rest];
+  })();
+
+  const moveGerente = useCallback((from: number, to: number) => {
+    setGerenteOrder(prev => {
+      const ids = gerentes.map(g => g.id);
+      const next = [...ids];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      localStorage.setItem(GERENTE_ORDER_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, [gerentes]);
 
   // Hierarquia de roles: 'admin' = global, 'admin-{sectorId}' = admin setorial, outros = viewer
   const isGlobalAdmin = currentUser?.role === 'admin';
@@ -104,7 +136,9 @@ export default function Dashboard() {
               <UserAvatar name={currentUser.name} avatar={currentUser.avatar} size="xs" />
               <div className="hidden md:block text-left">
                 <p className="text-sm font-bold leading-none">{currentUser.name}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{currentUser.role === 'admin' ? 'Administrador' : 'Usuário'}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {currentUser.role === 'chefe' ? 'Superintendente' : currentUser.role === 'gerente' ? 'Gerente' : currentUser.role === 'admin' ? 'Administrador' : 'Usuário'}
+                </p>
               </div>
             </div>
             <Button
@@ -150,6 +184,37 @@ export default function Dashboard() {
           ))}
         </div>
 
+        {/* Cards das Gerentes — visível só pro chefe */}
+        {isChefe && (
+          <div className="mb-10">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold flex items-center gap-2">
+                <span className="w-1.5 h-6 bg-primary rounded-full" />
+                Gerentes
+              </h3>
+              <Button
+                onClick={() => navigate('/chefe')}
+                className="gradient-blue border-none shadow-lg shadow-blue-500/20 h-9 gap-2"
+              >
+                <Plus className="h-4 w-4" /> Delegar Tarefa
+              </Button>
+            </div>
+            <DndProvider backend={HTML5Backend}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {gerentes.map((gerente, index) => (
+                  <GerenteCard
+                    key={gerente.id}
+                    gerente={gerente}
+                    index={index}
+                    tasks={tasks}
+                    onMove={moveGerente}
+                  />
+                ))}
+              </div>
+            </DndProvider>
+          </div>
+        )}
+
         {/* Setores Container */}
         <div className="mb-12">
           <div className="flex items-center justify-between mb-6">
@@ -178,19 +243,18 @@ export default function Dashboard() {
               return (
                 <div
                   key={sector.id}
-                  className="group relative cursor-pointer glass-card p-5 hover:translate-y-[-4px] transition-all duration-300 rounded-2xl border-none"
+                  className="sector-card relative glass-card p-5 rounded-2xl border-none"
                   onClick={() => navigate(`/kanban/${sector.id}`)}
                 >
                   {/* Top Glow Bar */}
                   <div
-                    className="absolute top-0 left-0 right-0 h-1"
+                    className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl"
                     style={{ background: `linear-gradient(to right, ${sector.color}, ${sector.color}dd)` }}
                   />
 
                   <div className="flex justify-between items-start mb-4">
-                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-white/5 border border-white/10 group-hover:bg-white/10 transition-colors">
-                      <span className="text-2xl grayscale group-hover:grayscale-0">
-                        {/* Simple sector icon based on color or name fallback */}
+                    <div className="sector-card-icon w-12 h-12 rounded-2xl flex items-center justify-center bg-white/5 border border-white/10 transition-colors duration-300">
+                      <span className="text-2xl">
                         {sector.id === 'recruitment' ? '👥' :
                           sector.id === 'compensation' ? '💰' :
                             sector.id === 'dho' ? '📋' :
@@ -208,7 +272,7 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  <h4 className="font-bold text-lg mb-1 group-hover:text-primary transition-colors">{sector.name}</h4>
+                  <h4 className="sector-card-title font-bold text-lg mb-1 transition-colors duration-300">{sector.name}</h4>
                   <p className="text-sm text-muted-foreground mb-6">
                     {sectorTasks.length} {sectorTasks.length === 1 ? 'tarefa registrada' : 'tarefas registradas'}
                   </p>
@@ -231,7 +295,7 @@ export default function Dashboard() {
                   </div>
 
                   {/* Hover Arrow Overlay */}
-                  <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="sector-card-arrow absolute bottom-4 right-4 opacity-0 transition-opacity duration-300">
                     <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
                       <LayoutDashboard className="w-3 h-3 text-primary animate-pulse" />
                     </div>

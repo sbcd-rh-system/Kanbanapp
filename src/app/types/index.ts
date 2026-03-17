@@ -1,8 +1,13 @@
-export type UserRole = 'admin' | 'user';
+export type UserRole =
+  | 'chefe'           // nível 1 — cria tarefas, delega para gerentes
+  | 'gerente'         // nível 2 — recebe do chefe, distribui para setores
+  | 'admin'           // admin global (vê tudo, gerencia usuários)
+  | `admin-${string}` // admin de setor específico, ex: 'admin-recruitment'
+  | 'user';           // usuário comum de setor
 
 export type TaskStatus = 'todo' | 'in-progress' | 'review' | 'done';
 
-export type SectorId = 'recruitment' | 'compensation' | 'dho' | 'dp' | 'data' | 'edu-assistencial' | 'ensino-pesquisa';
+export type SectorId = 'recruitment' | 'compensation' | 'dho' | 'dp' | 'data' | 'edu-assistencial' | 'ensino-pesquisa' | 'relacionamento-medico';
 
 export interface User {
   id: string;
@@ -19,6 +24,7 @@ export interface User {
   lotacao?: string;
   situacao?: string;
   linkedin_url?: string;
+  phone?: string;
 }
 
 export interface Sector {
@@ -60,6 +66,8 @@ export interface Task {
   projectId?: string; // ID do projeto ao qual a tarefa pertence
   points?: number;
   priority?: 'low' | 'medium' | 'high' | 'critical';
+  delegated_to?: string;         // id do usuário gerente (usado pelo chefe)
+  delegation_status?: 'pending' | 'distributed'; // status da delegação
   comments?: TaskComment[];
   attachments?: TaskAttachment[];
 }

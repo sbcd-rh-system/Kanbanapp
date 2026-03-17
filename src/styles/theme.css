@@ -93,7 +93,34 @@
 
 @layer utilities {
   .glass-card {
-    @apply bg-card backdrop-blur-glass border border-white/10 shadow-premium;
+    background-color: var(--color-card);
+    border: 1px solid oklch(1 0 0 / 0.1);
+    box-shadow: 0 10px 30px -10px oklch(0 0 0 / 50%);
+    backdrop-filter: blur(24px);
+  }
+
+  .sector-card {
+    cursor: pointer;
+    transition: transform 300ms ease, box-shadow 300ms ease, background-color 300ms ease;
+  }
+
+  .sector-card:hover {
+    transform: translateY(-8px) scale(1.05);
+    box-shadow: 0 25px 50px -12px oklch(0 0 0 / 0.7);
+    background-color: oklch(1 0 0 / 0.08);
+    z-index: 10;
+  }
+
+  .sector-card:hover .sector-card-icon {
+    background-color: oklch(1 0 0 / 0.12);
+  }
+
+  .sector-card:hover .sector-card-title {
+    color: var(--color-primary);
+  }
+
+  .sector-card:hover .sector-card-arrow {
+    opacity: 1;
   }
 
   .gradient-blue {

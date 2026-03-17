@@ -20,6 +20,8 @@ function getSectorFromRole(role: string): string | null {
 
 // Helper: resolve o label legível do role
 function getRoleLabel(role: string): string {
+  if (role === 'chefe') return 'Superintendente';
+  if (role === 'gerente') return 'Gerente';
   if (role === 'admin') return 'Administrador';
   if (role === 'user') return 'Gestor de Setor';
   if (role.startsWith('admin-')) {
@@ -37,6 +39,8 @@ function getRoleLabel(role: string): string {
 
 // Helper: retorna a cor do badge pelo role
 function getRoleBadgeClass(role: string): string {
+  if (role === 'chefe') return 'text-yellow-300 border-yellow-500/30 bg-yellow-500/10';
+  if (role === 'gerente') return 'text-cyan-400 border-cyan-500/30 bg-cyan-500/10';
   if (role === 'admin') return 'text-purple-400 border-purple-500/30 bg-purple-500/10';
   if (role.startsWith('admin-')) return 'text-orange-400 border-orange-500/30 bg-orange-500/10';
   if (role === 'user') return 'text-amber-400 border-amber-500/30 bg-amber-500/10';
@@ -45,6 +49,8 @@ function getRoleBadgeClass(role: string): string {
 
 // Helper: ícone do role
 function RoleIcon({ role }: { role: string }) {
+  if (role === 'chefe') return <Shield className="w-3 h-3 text-yellow-300" />;
+  if (role === 'gerente') return <Users className="w-3 h-3 text-cyan-400" />;
   if (role === 'admin') return <Shield className="w-3 h-3 text-purple-400" />;
   if (role.startsWith('admin-')) return <Shield className="w-3 h-3 text-orange-400" />;
   if (role === 'user') return <GitBranch className="w-3 h-3 text-amber-400" />;
@@ -102,6 +108,10 @@ function UserCard({ user, onEdit, onDelete, currentUserId, isAdmin }: {
   currentUserId: string;
   isAdmin: boolean;
 }) {
+  const parsedSectors = Array.isArray(user.sectors) 
+    ? user.sectors 
+    : (typeof user.sectors === 'string' ? JSON.parse(user.sectors || '[]') : []);
+
   return (
     <div
       onClick={() => isAdmin && onEdit(user)}
@@ -182,10 +192,10 @@ function UserCard({ user, onEdit, onDelete, currentUserId, isAdmin }: {
       {/* Sectors + Footer */}
       <div className="space-y-4 relative z-10">
         <div className="flex flex-wrap gap-1.5">
-          {user.sectors.map((sectorId: string) => (
+          {parsedSectors.map((sectorId: string) => (
             <SectorBadge key={sectorId} sectorId={sectorId as any} size="sm" />
           ))}
-          {user.sectors.length === 0 && <span className="text-xs italic text-muted-foreground">Sem setores</span>}
+          {parsedSectors.length === 0 && <span className="text-xs italic text-muted-foreground">Sem setores</span>}
         </div>
 
         <div className="pt-4 border-t border-white/5 flex items-center justify-between">
@@ -282,7 +292,9 @@ function ManagerGroup({ manager, subUsers, onEdit, onDelete, onAddSubUser, curre
   onAddSubUser: (sectors: string[]) => void;
   currentUserId: string;
 }) {
-  const managerSectors: string[] = Array.isArray(manager.sectors) ? manager.sectors : [];
+  const managerSectors: string[] = Array.isArray(manager.sectors) 
+    ? manager.sectors 
+    : (typeof manager.sectors === 'string' ? JSON.parse(manager.sectors || '[]') : []);
   return (
     <div className="flex flex-col">
       {/* Manager card */}
@@ -452,6 +464,8 @@ export default function UserManagement() {
 
   const filteredUsers = users
     .filter(u => {
+      if (u.role === 'chefe') return false; // Superintendente não aparece na lista
+      if (currentUser?.role === 'chefe' && u.role.startsWith('user-')) return false; // Chefe não vê usuários operacionais
       const matchesSearch =
         u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         u.email.toLowerCase().includes(searchQuery.toLowerCase());

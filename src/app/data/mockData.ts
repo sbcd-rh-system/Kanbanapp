@@ -8,9 +8,34 @@ export const sectors: Sector[] = [
   { id: 'data', name: 'Dados', color: '#6366f1', icon: 'database' },
   { id: 'edu-assistencial', name: 'Educação Assistencial', color: '#f87171', icon: 'graduation-cap' },
   { id: 'ensino-pesquisa', name: 'Ensino e Pesquisa', color: '#fbbf24', icon: 'microscope' },
+  { id: 'relacionamento-medico', name: 'Relacionamento Médico', color: '#a78bfa', icon: 'stethoscope' },
 ];
 
 export const users: User[] = [
+  {
+    id: '0',
+    name: 'Diretor Carlos',
+    email: 'chefe@empresa.com',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Carlos',
+    role: 'chefe',
+    sectors: [],
+  },
+  {
+    id: 'g1',
+    name: 'Gerente Fernanda',
+    email: 'fernanda@empresa.com',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Fernanda',
+    role: 'gerente',
+    sectors: [],
+  },
+  {
+    id: 'g2',
+    name: 'Gerente Patrícia',
+    email: 'patricia@empresa.com',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Patricia',
+    role: 'gerente',
+    sectors: [],
+  },
   {
     id: '1',
     name: 'Admin Amanda',

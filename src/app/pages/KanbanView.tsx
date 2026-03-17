@@ -82,7 +82,7 @@ export default function KanbanView() {
         })
         .catch(console.error);
     }
-  }, [boardKey, sectorId, currentUser, navigate]);
+  }, [boardKey, sectorId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!currentUser) return null;
 

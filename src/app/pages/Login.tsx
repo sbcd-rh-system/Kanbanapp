@@ -46,7 +46,11 @@ export default function Login() {
         setCurrentUser(userObj);
         toast.success(`Bem-vindo(a), ${user.name}!`);
         const role = userObj.role as string;
-        if (role === 'admin' || role.startsWith('admin-')) {
+        if (role === 'chefe') {
+          navigate('/dashboard');
+        } else if (role === 'gerente') {
+          navigate('/gerente');
+        } else if (role === 'admin' || role.startsWith('admin-')) {
           navigate('/dashboard');
         } else {
           // user-{sectorId} -> vai pro kanban do setor
