@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router';
 import { Button } from '../components/ui/button';
 import { UserAvatar } from '../components/UserAvatar';
 import { SectorBadge } from '../components/SectorBadge';
-import { ArrowLeft, Plus, Search, Shield, User, Users, Edit, Trash2, Loader2, RefreshCw, Linkedin, GitBranch, LogOut, UserPlus, Clock, Copy } from 'lucide-react';
+import { ArrowLeft, Plus, Search, Shield, User, Users, Edit, Trash2, Loader2, RefreshCw, Linkedin, GitBranch, UserPlus, Clock, Copy } from 'lucide-react';
 import { Badge } from '../components/ui/badge';
 import { UserRegistrationModal } from '../components/UserRegistrationModal';
 import { userService } from '../services/userService';
 import { cleanOrisId } from '../services/orisService';
 import { toast } from 'sonner';
-import { getCurrentUser, sectors, logoutUser } from '../data/mockData';
+import { getCurrentUser, sectors } from '../data/mockData';
 
 // Helper: extrai o sectorId de um role do tipo 'admin-xxx' ou 'user-xxx'
 function getSectorFromRole(role: string): string | null {
@@ -21,7 +21,7 @@ function getSectorFromRole(role: string): string | null {
 // Helper: resolve o label legível do role
 function getRoleLabel(role: string): string {
   if (role === 'chefe') return 'Superintendente';
-  if (role === 'gerente') return 'Gerente';
+  if (role === 'gerente') return 'Receptor';
   if (role === 'admin') return 'Administrador';
   if (role === 'user') return 'Gestor de Setor';
   if (role.startsWith('admin-')) {
@@ -146,7 +146,7 @@ function UserCard({ user, onEdit, onDelete, currentUserId, isAdmin }: {
 
         {/* Action buttons — only for admins */}
         {isAdmin && (
-          <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all" onClick={e => e.stopPropagation()}>
+          <div className="flex gap-1.5" onClick={e => e.stopPropagation()}>
             <Button
               variant="ghost" size="icon"
               onClick={() => onEdit(user)}
@@ -266,7 +266,7 @@ function SubUserRow({ user, onEdit, onDelete, currentUserId, canEdit }: {
           {getRoleLabel(user.role)}
         </Badge>
         {canEdit && (
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all" onClick={e => e.stopPropagation()}>
+          <div className="flex gap-1" onClick={e => e.stopPropagation()}>
             <Button variant="ghost" size="icon" onClick={() => onEdit(user)}
               className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 hover:bg-primary/20 hover:text-primary transition-colors">
               <Edit className="h-3 w-3" />
@@ -359,7 +359,7 @@ function SectionHeader({ icon, label, count, color }: {
   icon: ReactNode;
   label: string;
   count: number;
-  color: 'purple' | 'blue';
+  color: 'purple' | 'blue' | 'amber';
 }) {
   const styles = {
     purple: {
@@ -373,6 +373,12 @@ function SectionHeader({ icon, label, count, color }: {
       text: 'text-blue-400',
       badge: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
       line: 'bg-blue-500/10',
+    },
+    amber: {
+      wrap: 'bg-yellow-500/10 border-yellow-500/20',
+      text: 'text-yellow-300',
+      badge: 'bg-yellow-500/10 text-yellow-300 border-yellow-500/20',
+      line: 'bg-yellow-500/10',
     },
   }[color];
 
@@ -403,7 +409,9 @@ export default function UserManagement() {
       return;
     }
     loadUsers();
-  }, []);
+  }, [currentUser]);
+
+  if (!currentUser) return null;
 
   const loadUsers = async () => {
     try {
@@ -464,8 +472,10 @@ export default function UserManagement() {
 
   const filteredUsers = users
     .filter(u => {
-      if (u.role === 'chefe') return false; // Superintendente não aparece na lista
-      if (currentUser?.role === 'chefe' && u.role.startsWith('user-')) return false; // Chefe não vê usuários operacionais
+      if (u.role === 'chefe') return false;
+      if (u.id === 'ad9j227or') return false; // Usuário de sistema, oculto para todos
+      if (u.id === currentUser?.id) return false; // Usuário logado não aparece na lista
+      if (currentUser?.role === 'chefe' && u.role.startsWith('user-')) return false;
       const matchesSearch =
         u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         u.email.toLowerCase().includes(searchQuery.toLowerCase());
@@ -481,13 +491,10 @@ export default function UserManagement() {
       return true;
     })
     .sort((a, b) => {
-      const roleOrder = (r: string) =>
-        r === 'admin' ? 0 : r.startsWith('admin-') ? 1 : r === 'user' ? 2 : 3;
-      const diff = roleOrder(a.role) - roleOrder(b.role);
-      if (diff !== 0) return diff;
       return a.name.localeCompare(b.name, 'pt-BR');
     });
 
+  const chefe = users.find(u => u.role === 'chefe');
   const admins = filteredUsers.filter(u => u.role === 'admin');
   const collaborators = filteredUsers.filter(u => u.role !== 'admin');
 
@@ -495,12 +502,16 @@ export default function UserManagement() {
   const managers = filteredUsers.filter(u => u.role.startsWith('admin-') && u.role !== 'admin');
   const subUsers = filteredUsers.filter(u => u.role.startsWith('user-') && u.role !== 'user');
 
-  // Agrupar sub-usuários por admin setorial (manager gerencia o setor do sub)
+  // Agrupar sub-usuários por admin setorial — só mostra o manager no setor se ele ainda tiver esse setor no array sectors
   const orgGroups = managers.map(manager => {
     const managerSectorId = manager.role.replace('admin-', '');
+    const managerSectors: string[] = Array.isArray(manager.sectors)
+      ? manager.sectors
+      : (typeof manager.sectors === 'string' ? JSON.parse(manager.sectors || '[]') : []);
+    if (!managerSectors.includes(managerSectorId)) return null;
     const managed = subUsers.filter(su => su.role === `user-${managerSectorId}`);
     return { manager, subUsers: managed };
-  });
+  }).filter(Boolean) as { manager: any; subUsers: any[] }[];
 
   // Usuários com role 'user' (gestores antigos ou usuários sem vínculo hierárquico explícito)
   const otherUsers = filteredUsers.filter(u => u.role === 'user');
@@ -573,29 +584,6 @@ export default function UserManagement() {
             </Button>
           )}
 
-          {/* Usuário logado + botão sair */}
-          <div className="flex items-center gap-3 pl-3 border-l border-white/10">
-            <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
-              <UserAvatar name={currentUser!.name} avatar={currentUser!.avatar} size="sm" />
-              <div className="hidden sm:block text-left">
-                <p className="text-sm font-bold leading-none truncate max-w-[120px]">{currentUser!.name.split(' ')[0]}</p>
-                <p className="text-xs mt-0.5 font-semibold" style={{
-                  color: isGlobalAdmin ? '#a78bfa' : isSectorAdmin ? '#fb923c' : '#60a5fa'
-                }}>
-                  {getRoleLabel(currentUser!.role)}
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => { logoutUser(); navigate('/'); }}
-              title="Sair"
-              className="rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
         </div>
       </header>
 
@@ -623,6 +611,27 @@ export default function UserManagement() {
         </div>
 
         <div className="flex flex-col gap-6">
+          {/* Chefe / Superintendente */}
+          {chefe && (
+            <div>
+              <SectionHeader
+                icon={<Shield className="w-4 h-4 text-yellow-300" />}
+                label="Superintendência"
+                count={1}
+                color="amber"
+              />
+              <div className="max-w-sm">
+                <UserCard
+                  user={chefe}
+                  onEdit={handleEditUser}
+                  onDelete={handleDeleteUser}
+                  currentUserId={currentUser.id}
+                  isAdmin={isGlobalAdmin}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Search */}
           <div className="glass-card p-4 rounded-2xl flex flex-col md:flex-row gap-4 items-center border-none shadow-2xl">
             <div className="relative flex-1 w-full">

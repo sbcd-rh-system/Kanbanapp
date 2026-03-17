@@ -4,17 +4,18 @@ import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { sectors, getCurrentUser, logoutUser } from '../data/mockData';
+import { sectors, getCurrentUser } from '../data/mockData';
 import { taskService } from '../services/taskService';
 import { userService } from '../services/userService';
 import { Task, User } from '../types';
 import { SectorBadge } from '../components/SectorBadge';
 import { UserAvatar } from '../components/UserAvatar';
 import { GerenteCard } from '../components/GerenteCard';
+import { UserRegistrationModal } from '../components/UserRegistrationModal';
+import { toast } from 'sonner';
 import {
   LayoutDashboard,
   Users,
-  LogOut,
   CheckCircle2,
   Clock,
   AlertCircle,
@@ -32,6 +33,7 @@ export default function Dashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   useEffect(() => {
     if (!currentUser) {
@@ -55,6 +57,25 @@ export default function Dashboard() {
     }
     loadData();
   }, []);
+
+  const handleAddReceptor = async (userData: any) => {
+    try {
+      // Forçar o role como gerente para receptores adicionados por aqui
+      const newUser = { ...userData, role: 'gerente' as const };
+      await userService.saveUser(newUser);
+      toast.success('Receptor adicionado com sucesso!');
+      
+      // Recarregar dados
+      const [loadedTasks, loadedUsers] = await Promise.all([
+        taskService.listTasks(),
+        userService.listUsers()
+      ]);
+      setTasks(loadedTasks);
+      setUsers(loadedUsers);
+    } catch (error) {
+      toast.error('Erro ao adicionar receptor.');
+    }
+  };
 
   const isChefe = currentUser?.role === 'chefe';
   const gerentesRaw = users.filter(u => u.role === 'gerente');
@@ -111,11 +132,6 @@ export default function Dashboard() {
   const reviewTasks = visibleTasks.filter(t => t.status === 'review').length;
   const doneTasks = visibleTasks.filter(t => t.status === 'done').length;
 
-  const handleLogout = () => {
-    logoutUser();
-    navigate('/');
-  };
-
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/30">
       {/* Premium Header */}
@@ -131,25 +147,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4">
-            <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
-              <UserAvatar name={currentUser.name} avatar={currentUser.avatar} size="xs" />
-              <div className="hidden md:block text-left">
-                <p className="text-sm font-bold leading-none">{currentUser.name}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {currentUser.role === 'chefe' ? 'Superintendente' : currentUser.role === 'gerente' ? 'Gerente' : currentUser.role === 'admin' ? 'Administrador' : 'Usuário'}
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleLogout}
-              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
         </div>
       </header>
 
@@ -184,20 +181,29 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Cards das Gerentes — visível só pro chefe */}
+        {/* Cards dos Receptores — visível só pro chefe */}
         {isChefe && (
           <div className="mb-10">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold flex items-center gap-2">
                 <span className="w-1.5 h-6 bg-primary rounded-full" />
-                Gerentes
+                Delegar Tarefas
               </h3>
-              <Button
-                onClick={() => navigate('/chefe')}
-                className="gradient-blue border-none shadow-lg shadow-blue-500/20 h-9 gap-2"
-              >
-                <Plus className="h-4 w-4" /> Delegar Tarefa
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => setIsAddModalOpen(true)}
+                  variant="outline"
+                  className="border-white/10 bg-white/5 hover:bg-white/10 h-9 gap-2"
+                >
+                  <Plus className="h-4 w-4" /> Adicionar Receptor
+                </Button>
+                <Button
+                  onClick={() => navigate('/superintendente')}
+                  className="gradient-blue border-none shadow-lg shadow-blue-500/20 h-9 gap-2"
+                >
+                  <Plus className="h-4 w-4" /> Delegar Tarefa
+                </Button>
+              </div>
             </div>
             <DndProvider backend={HTML5Backend}>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -220,7 +226,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-bold flex items-center gap-2">
               <span className="w-1.5 h-6 bg-primary rounded-full" />
-              {isAdmin ? 'Setores Operacionais' : 'Meus Setores'}
+              {isAdmin ? 'Setores Operacionais' : 'Setores'}
             </h3>
             <Badge variant="outline" className="border-white/10 bg-white/5 text-xs uppercase font-bold tracking-tighter">
               {visibleSectors.length} {visibleSectors.length === 1 ? 'Setor Ativo' : 'Setores Ativos'}
@@ -407,6 +413,12 @@ export default function Dashboard() {
           </Card>
         </div>
       </main>
+
+      <UserRegistrationModal 
+        isOpen={isAddModalOpen}
+        onOpenChange={setIsAddModalOpen}
+        onUserAdded={handleAddReceptor}
+      />
     </div>
   );
 }

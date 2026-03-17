@@ -68,6 +68,7 @@ export interface Task {
   priority?: 'low' | 'medium' | 'high' | 'critical';
   delegated_to?: string;         // id do usuário gerente (usado pelo chefe)
   delegation_status?: 'pending' | 'distributed'; // status da delegação
+  batchId?: string;              // id do lote quando delegada para múltiplos receptores
   comments?: TaskComment[];
   attachments?: TaskAttachment[];
 }

@@ -191,7 +191,8 @@ app.get('/api/employees/search', async (req, res) => {
         const isNumeric = !isNaN(q);
         let queryBuilder = supabaseEmployees
             .from('oris_funcionarios')
-            .select('*');
+            .select('*')
+            .eq('situacao', '01-ATIVO');
         
         if (isNumeric) {
             queryBuilder = queryBuilder.or(`id.eq.${q},nome.ilike.%${q}%`);

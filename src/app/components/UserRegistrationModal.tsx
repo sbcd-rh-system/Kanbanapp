@@ -186,7 +186,7 @@ export function UserRegistrationModal({ isOpen, onOpenChange, onUserAdded, editi
         setIsSearching(true);
         try {
             const results = await orisService.searchFuncionarios(val);
-            setSearchResults(results);
+            setSearchResults(results.filter((emp: any) => emp.situacao === '01-ATIVO'));
         } catch (error) {
             console.error('Search error:', error);
         } finally {
@@ -201,7 +201,7 @@ export function UserRegistrationModal({ isOpen, onOpenChange, onUserAdded, editi
             email: emp.email || '',
             cargo: emp.cargo || '',
             dt_admissao: orisService.formatDate(emp.dt_admissao) || '',
-            lotacao: emp.lotacao || '',
+            lotacao: emp.centro_custo || '',
             phone: formatPhone(emp.telefone_celular),
             situacao: emp.situacao || '',
         });

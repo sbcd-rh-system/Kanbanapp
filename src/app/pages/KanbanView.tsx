@@ -8,8 +8,7 @@ import { TouchBackend } from 'react-dnd-touch-backend';
 import { MultiBackend, TouchTransition, MouseTransition } from 'dnd-multi-backend';
 import { TaskModal } from '../components/TaskModal';
 import { ConnectionGraph } from '../components/ConnectionGraph';
-import { UserAvatar } from '../components/UserAvatar';
-import { getSectorById, getCurrentUser, sectors, logoutUser } from '../data/mockData';
+import { getSectorById, getCurrentUser, sectors } from '../data/mockData';
 import { Task, SectorId, TaskStatus, User, Project } from '../types';
 import { taskService } from '../services/taskService';
 import { userService } from '../services/userService';
@@ -18,13 +17,9 @@ import {
   ArrowLeft,
   Plus,
   Filter,
-  LogOut,
   LayoutDashboard,
   Link2Off,
-  Link2,
-  Shield,
   FolderKanban,
-  X,
   MoreHorizontal,
   Trash2,
 } from 'lucide-react';
@@ -145,11 +140,6 @@ export default function KanbanView() {
   const handleViewConnections = (task: Task) => {
     setConnectionTask(task);
     setConnectionModalOpen(true);
-  };
-
-  const handleLogout = () => {
-    logoutUser();
-    navigate('/');
   };
 
   const handleCreateProject = async () => {
@@ -292,40 +282,6 @@ export default function KanbanView() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <div className="h-6 w-px bg-white/10 mx-1" />
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="h-10 px-2 rounded-xl hover:bg-white/5 transition-colors gap-3">
-                    <UserAvatar
-                      name={currentUser.name}
-                      avatar={currentUser.avatar}
-                      size="sm"
-                      showTooltip={false}
-                    />
-                    <div className="hidden sm:block text-left">
-                      <p className="text-sm font-bold leading-none">{currentUser.name.split(' ')[0]}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5 uppercase tracking-tighter">{currentUser.role === 'admin' ? 'Admin' : 'Membro'}</p>
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 bg-background/95 backdrop-blur-xl border-white/10 rounded-2xl p-2 shadow-2xl">
-                  <DropdownMenuLabel className="text-sm font-bold uppercase tracking-widest text-muted-foreground px-3 py-2">Conta</DropdownMenuLabel>
-                  <DropdownMenuSeparator className="bg-white/5" />
-                  <DropdownMenuItem className="rounded-lg focus:bg-white/5 cursor-pointer">
-                    <LayoutDashboard className="h-3.5 w-3.5 mr-2 opacity-60" /> Perfil
-                  </DropdownMenuItem>
-                  {currentUser.role === 'admin' && (
-                    <DropdownMenuItem onClick={() => navigate('/admin/users')} className="rounded-lg focus:bg-white/5 cursor-pointer">
-                      <Shield className="h-3.5 w-3.5 mr-2 opacity-60" /> Gestão de Equipe
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuSeparator className="bg-white/5" />
-                  <DropdownMenuItem onClick={handleLogout} className="rounded-lg focus:bg-destructive/10 focus:text-destructive cursor-pointer">
-                    <LogOut className="h-3.5 w-3.5 mr-2" /> Sair
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
           </div>
 

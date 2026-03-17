@@ -10,12 +10,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../components/ui/dialog';
-import { getCurrentUser, logoutUser, sectors } from '../data/mockData';
+import { getCurrentUser, sectors } from '../data/mockData';
 import { userService } from '../services/userService';
 import { taskService } from '../services/taskService';
 import { Task, User } from '../types';
-import { UserAvatar } from '../components/UserAvatar';
-import { LogOut, Inbox, CheckCircle2, Clock, LayoutDashboard, ArrowRight } from 'lucide-react';
+import { Inbox, CheckCircle2, Clock, LayoutDashboard, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 const PRIORITY_LABELS = { low: 'Baixa', medium: 'Média', high: 'Alta', critical: 'Urgente' };
@@ -45,7 +44,9 @@ export default function GerenteDashboard() {
       return;
     }
     loadData();
-  }, []);
+  }, [currentUser]);
+
+  if (!currentUser) return null;
 
   async function loadData() {
     try {
@@ -117,23 +118,9 @@ export default function GerenteDashboard() {
               <Inbox className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight">Painel da Gerente</h1>
+              <h1 className="text-lg font-bold tracking-tight">Painel do Receptor</h1>
               <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Fila de Distribuição</p>
             </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
-              <UserAvatar name={currentUser.name} avatar={currentUser.avatar} size="xs" />
-              <span className="hidden md:block text-sm font-bold">{currentUser.name.split(' ')[0]}</span>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => { logoutUser(); navigate('/'); }}
-              className="w-8 h-8 rounded-full hover:bg-destructive/10 hover:text-destructive"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
           </div>
         </div>
       </header>
