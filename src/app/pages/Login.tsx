@@ -46,16 +46,11 @@ export default function Login() {
         setCurrentUser(userObj);
         toast.success(`Bem-vindo(a), ${user.name}!`);
         const role = userObj.role as string;
-        if (role === 'chefe') {
-          navigate('/dashboard');
-        } else if (role === 'gerente') {
-          navigate('/gerente');
-        } else if (role === 'admin' || role.startsWith('admin-')) {
-          navigate('/dashboard');
-        } else {
-          // user-{sectorId} -> vai pro kanban do setor
-          const sectorId = role.startsWith('user-') ? role.replace('user-', '') : 'recruitment';
+        if (role.startsWith('user-')) {
+          const sectorId = role.replace('user-', '');
           navigate(`/kanban/${sectorId}`);
+        } else {
+          navigate('/dashboard');
         }
       } else if (!user) {
         toast.error('Email não encontrado. Verifique se seu cadastro foi realizado.');

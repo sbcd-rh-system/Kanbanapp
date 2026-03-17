@@ -6,6 +6,7 @@ import UserManagement from './pages/UserManagement';
 import ChefeDashboard from './pages/ChefeDashboard';
 import GerenteDashboard from './pages/GerenteDashboard';
 import GerenteView from './pages/GerenteView';
+import Profile from './pages/Profile';
 
 export const router = createBrowserRouter([
   {
@@ -21,7 +22,7 @@ export const router = createBrowserRouter([
     Component: GerenteView,
   },
   {
-    path: '/gerente',
+    path: '/admintasks',
     Component: GerenteDashboard,
   },
   {
@@ -35,5 +36,9 @@ export const router = createBrowserRouter([
   {
     path: '/admin/users',
     Component: UserManagement,
+  },
+  {
+    path: '/profile',
+    Component: Profile,
   },
 ]);

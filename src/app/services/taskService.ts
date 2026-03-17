@@ -4,7 +4,7 @@ const API_URL = '/api/tasks';
 
 export const taskService = {
     async listTasks(): Promise<Task[]> {
-        const response = await fetch(API_URL);
+        const response = await fetch(API_URL, { cache: 'no-store' });
         if (!response.ok) throw new Error('Falha ao buscar tarefas');
         return response.json();
     },

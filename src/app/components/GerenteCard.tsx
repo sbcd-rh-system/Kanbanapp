@@ -9,9 +9,13 @@ import { GripVertical } from 'lucide-react';
 
 const GERENTE_COLORS: Record<string, { from: string; to: string; shadow: string }> = {
   zo3yaeowf: { from: '#6366f1', to: '#8b5cf6', shadow: '99, 102, 241' },   // Fernanda — índigo/violeta
-  cb6e9qh4r: { from: '#ec4899', to: '#f43f5e', shadow: '236, 72, 153' },   // Vanessa — rosa/vermelho
+  '3ebulre9v': { from: '#a855f7', to: '#ec4899', shadow: '168, 85, 247' },   // Vanessa — roxo/rosa (igual revisão)
   an3y10n6x: { from: '#10b981', to: '#06b6d4', shadow: '16, 185, 129' },   // Amanda — verde/ciano
   gdmyg9tor: { from: '#f59e0b', to: '#f97316', shadow: '245, 158, 11' },   // Jean — âmbar/laranja
+};
+
+const NAME_COLORS: Record<string, { from: string; to: string; shadow: string }> = {
+  'VANESSA PENA VIRGINIO': { from: '#a855f7', to: '#ec4899', shadow: '168, 85, 247' },
 };
 
 const FALLBACK_COLORS = [
@@ -34,7 +38,10 @@ export function GerenteCard({ gerente, index, tasks, onMove }: Props) {
   const navigate = useNavigate();
   const ref = useRef<HTMLDivElement>(null);
 
-  const color = GERENTE_COLORS[gerente.id] ?? FALLBACK_COLORS[index % FALLBACK_COLORS.length];
+  const color = 
+    GERENTE_COLORS[gerente.id] || 
+    NAME_COLORS[gerente.name.toUpperCase()] || 
+    FALLBACK_COLORS[index % FALLBACK_COLORS.length];
 
   const pendingCount = tasks.filter(
     t => t.delegated_to === gerente.id && t.delegation_status === 'pending'
@@ -67,7 +74,7 @@ export function GerenteCard({ gerente, index, tasks, onMove }: Props) {
           transform: isOver ? 'scale(1.02)' : undefined,
           boxShadow: isOver ? `0 0 0 2px rgba(${color.shadow}, 0.5)` : undefined,
         }}
-        onClick={() => navigate(`/chefe/gerente/${gerente.id}`)}
+        onClick={() => navigate(`/superintendente/usuarios/${gerente.id}`)}
       >
         {/* Barra de cor no topo */}
         <div
@@ -89,7 +96,7 @@ export function GerenteCard({ gerente, index, tasks, onMove }: Props) {
               </div>
               <div className="min-w-0">
                 <p className="font-bold text-sm leading-tight truncate">{gerente.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{gerente.cargo || 'Gerente'}</p>
+                <p className="text-xs text-muted-foreground truncate">{gerente.cargo || 'Receptor'}</p>
               </div>
             </div>
 

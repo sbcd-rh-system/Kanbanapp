@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -22,20 +22,25 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../components/ui/dialog';
-import { getCurrentUser, logoutUser, sectors } from '../data/mockData';
+import { getCurrentUser, sectors } from '../data/mockData';
 import { userService } from '../services/userService';
 import { taskService } from '../services/taskService';
-import { User, Task } from '../types';
+import { User, Task, TaskAttachment } from '../types';
 import { UserAvatar } from '../components/UserAvatar';
 import {
   ArrowLeft,
   Plus,
   Clock,
   CheckCircle2,
-  AlertCircle,
-  LogOut,
   CalendarIcon,
   ChevronRight,
+  Paperclip,
+  X,
+  FileText,
+  Image,
+  File,
+  Mic,
+  MicOff,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -78,7 +83,59 @@ export default function GerenteView() {
     description: '',
     priority: 'medium' as 'low' | 'medium' | 'high' | 'critical',
     dueDate: undefined as Date | undefined,
+    attachments: [] as TaskAttachment[],
   });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [recordingField, setRecordingField] = useState<'title' | 'description' | null>(null);
+  const recognitionRef = useRef<any>(null);
+
+  function startRecording(field: 'title' | 'description') {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) { toast.error('Seu browser não suporta reconhecimento de voz.'); return; }
+    if (recordingField) { recognitionRef.current?.stop(); return; }
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'pt-BR';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognitionRef.current = recognition;
+    setRecordingField(field);
+    recognition.onresult = (e: any) => {
+      const transcript = e.results[0][0].transcript;
+      setForm(f => ({ ...f, [field]: f[field] ? f[field] + ' ' + transcript : transcript }));
+    };
+    recognition.onerror = () => toast.error('Erro no reconhecimento de voz.');
+    recognition.onend = () => setRecordingField(null);
+    recognition.start();
+  }
+
+  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const attachment: TaskAttachment = {
+          id: Math.random().toString(36).slice(2, 11),
+          name: file.name,
+          url: reader.result as string,
+          type: file.type,
+          createdAt: new Date().toISOString(),
+        };
+        setForm(f => ({ ...f, attachments: [...f.attachments, attachment] }));
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+  }
+
+  function removeAttachment(id: string) {
+    setForm(f => ({ ...f, attachments: f.attachments.filter(a => a.id !== id) }));
+  }
+
+  function getFileIcon(type: string) {
+    if (type.startsWith('image/')) return Image;
+    if (type === 'application/pdf' || type.includes('text')) return FileText;
+    return File;
+  }
 
   useEffect(() => {
     if (!currentUser || currentUser.role !== 'chefe') {
@@ -86,7 +143,9 @@ export default function GerenteView() {
       return;
     }
     loadData();
-  }, [gerenteId]);
+  }, [currentUser]);
+
+  if (!currentUser) return null;
 
   async function loadData() {
     try {
@@ -124,11 +183,12 @@ export default function GerenteView() {
         priority: form.priority,
         delegated_to: gerenteId,
         delegation_status: 'pending',
+        attachments: form.attachments,
       };
       await taskService.saveTask(task);
       toast.success('Tarefa delegada!');
       setModalOpen(false);
-      setForm({ title: '', description: '', priority: 'medium', dueDate: '' });
+      setForm({ title: '', description: '', priority: 'medium', dueDate: undefined, attachments: [] });
       loadData();
     } catch {
       toast.error('Erro ao delegar tarefa.');
@@ -199,21 +259,11 @@ export default function GerenteView() {
                 <div>
                   <h1 className="text-base font-bold leading-tight">{gerente.name}</h1>
                   <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
-                    {gerente.cargo || 'Gerente'}
+                    {gerente.cargo || 'Receptor'}
                   </p>
                 </div>
               </div>
             )}
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => { logoutUser(); navigate('/'); }}
-              className="w-9 h-9 rounded-full hover:bg-destructive/10 hover:text-destructive"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
           </div>
         </div>
       </header>
@@ -221,7 +271,7 @@ export default function GerenteView() {
       <main className="container mx-auto px-4 sm:px-6 py-8 max-w-4xl">
 
         {/* Stat strip */}
-        <div className="grid grid-cols-3 gap-3 mb-8">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-8">
           {[
             { label: 'Total', value: tasks.length, color: 'from-blue-500 to-indigo-600', icon: ChevronRight },
             { label: 'Aguardando', value: pendingTasks.length, color: 'from-yellow-400 to-orange-500', icon: Clock },
@@ -230,13 +280,13 @@ export default function GerenteView() {
             <div key={i} className="glass-card rounded-2xl p-4 border-none relative overflow-hidden">
               <div className={`absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r ${s.color}`} />
               <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">{s.label}</p>
-              <p className="text-3xl font-bold tracking-tighter">{s.value}</p>
+              <p className="text-2xl sm:text-3xl font-bold tracking-tighter">{s.value}</p>
             </div>
           ))}
         </div>
 
         {/* Tabs and Action */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div className="flex gap-1 p-1 rounded-xl bg-white/5 border border-white/5 w-fit">
             {([
               { key: 'pending', label: 'Aguardando', count: pendingTasks.length },
@@ -246,7 +296,7 @@ export default function GerenteView() {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center gap-2 ${
+                className={`px-2 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 flex items-center gap-1 sm:gap-2 ${
                   activeTab === tab.key
                     ? 'bg-primary text-primary-foreground shadow'
                     : 'text-muted-foreground hover:text-foreground'
@@ -264,7 +314,7 @@ export default function GerenteView() {
 
           <Button
             onClick={() => setModalOpen(true)}
-            className="gradient-blue border-none shadow-lg shadow-blue-500/20 h-10 gap-2 px-5 font-bold"
+            className="gradient-blue border-none shadow-lg shadow-blue-500/20 h-10 gap-2 px-5 font-bold w-full sm:w-auto"
           >
             <Plus className="h-5 w-5" /> Nova Tarefa
           </Button>
@@ -415,7 +465,7 @@ export default function GerenteView() {
 
       {/* Modal delegar */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="sm:max-w-md bg-background border-white/10">
+        <DialogContent className="sm:max-w-md bg-background border-white/10 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold">
               Nova Tarefa para {gerente?.name.split(' ')[0]}
@@ -424,39 +474,62 @@ export default function GerenteView() {
           <form onSubmit={handleDelegate} className="space-y-4">
             <div className="space-y-1.5">
               <Label>Título</Label>
-              <Input
-                placeholder="O que precisa ser feito?"
-                value={form.title}
-                onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                required
-              />
+              <div className="relative">
+                <Input
+                  placeholder="O que precisa ser feito?"
+                  value={form.title}
+                  onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                  required
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => startRecording('title')}
+                  title="Falar título"
+                  className={`absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md transition-colors ${
+                    recordingField === 'title' ? 'text-red-400 animate-pulse' : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {recordingField === 'title' ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label>Descrição</Label>
-              <Textarea
-                placeholder="Detalhe a tarefa..."
-                value={form.description}
-                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                rows={3}
-              />
+              <div className="relative">
+                <Textarea
+                  placeholder="Detalhe a tarefa..."
+                  value={form.description}
+                  onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                  rows={3}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => startRecording('description')}
+                  title="Falar descrição"
+                  className={`absolute right-2 top-2 p-1 rounded-md transition-colors ${
+                    recordingField === 'description' ? 'text-red-400 animate-pulse' : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {recordingField === 'description' ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Prioridade</Label>
-                <Select
+                <select
+                  className="w-full h-10 rounded-md border border-white/10 bg-[#0f0f14] px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  style={{ colorScheme: 'dark' }}
                   value={form.priority}
-                  onValueChange={v => setForm(f => ({ ...f, priority: v as any }))}
+                  onChange={e => setForm(f => ({ ...f, priority: e.target.value as any }))}
                 >
-                  <SelectTrigger className="border-white/10 bg-white/5">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low"><span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />Baixa</span></SelectItem>
-                    <SelectItem value="medium"><span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-yellow-400 shrink-0" />Média</span></SelectItem>
-                    <SelectItem value="high"><span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-orange-400 shrink-0" />Alta</span></SelectItem>
-                    <SelectItem value="critical"><span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />Urgente</span></SelectItem>
-                  </SelectContent>
-                </Select>
+                  <option value="low">Baixa</option>
+                  <option value="medium">Média</option>
+                  <option value="high">Alta</option>
+                  <option value="critical">Urgente</option>
+                </select>
               </div>
               <div className="space-y-1.5">
                 <Label>Prazo</Label>
@@ -479,12 +552,39 @@ export default function GerenteView() {
                 </Popover>
               </div>
             </div>
+            <div className="space-y-1.5">
+              <Label>Anexos</Label>
+              <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileUpload} />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full flex items-center justify-center gap-2 h-10 rounded-md border border-dashed border-white/20 bg-white/5 hover:bg-white/10 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Paperclip className="h-4 w-4" /> Clique para anexar arquivos
+              </button>
+              {form.attachments.length > 0 && (
+                <div className="space-y-1.5 mt-2">
+                  {form.attachments.map(att => {
+                    const Icon = getFileIcon(att.type);
+                    return (
+                      <div key={att.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10">
+                        <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-xs text-foreground flex-1 truncate">{att.name}</span>
+                        <button type="button" onClick={() => removeAttachment(att.id)} className="p-0.5 rounded hover:bg-white/10 text-muted-foreground hover:text-destructive transition-colors shrink-0">
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
             <div className="flex gap-2 pt-2">
               <Button type="button" variant="outline" className="flex-1 border-white/10" onClick={() => setModalOpen(false)}>
                 Cancelar
               </Button>
               <Button type="submit" className="flex-1 gradient-blue border-none" disabled={saving}>
-                {saving ? 'Adicionando...' : 'Adicionar Tarefa'}
+                {saving ? 'Salvando...' : 'Salvar'}
               </Button>
             </div>
           </form>
