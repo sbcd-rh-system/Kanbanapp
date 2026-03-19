@@ -275,8 +275,9 @@ export default function ChefeDashboard() {
               <LayoutDashboard className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight">Tarefas Delegadas</h1>
-                                                                                                 </div>
+              <h1 className="text-lg font-bold tracking-tight">Painel do Chefe</h1>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Delegação de Tarefas</p>
+            </div>
           </div>
         </div>
       </header>
@@ -366,34 +367,12 @@ export default function ChefeDashboard() {
 
         {/* Tarefas Delegadas */}
         <div>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-            <h3 className="text-xl font-bold flex items-center gap-2">
-              <span className="w-1.5 h-6 bg-primary rounded-full" />
-              Tarefas Delegadas
-            </h3>
-            <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl p-1 w-fit">
-              {([
-                { value: 'date', label: 'Data' },
-                { value: 'priority', label: 'Prioridade' },
-                { value: 'person', label: 'Pessoa' },
-              ] as const).map(opt => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setSortBy(opt.value)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    sortBy === opt.value
-                      ? 'bg-primary text-white'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          <h3 className="text-xl font-bold flex items-center gap-2 mb-5">
+            <span className="w-1.5 h-6 bg-primary rounded-full" />
+            Tarefas Delegadas
+          </h3>
 
-          {sortedTasks.length === 0 ? (
+          {delegatedTasks.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 glass-card rounded-2xl border-dashed border-2 border-white/5">
               <AlertCircle className="h-8 w-8 text-muted-foreground mb-3 opacity-40" />
               <p className="text-muted-foreground font-medium">Nenhuma tarefa delegada ainda.</p>
@@ -406,12 +385,8 @@ export default function ChefeDashboard() {
                 const allDistributed = batch.every(t => t.delegation_status === 'distributed');
                 const attachCount = (task.attachments || []).length;
                 return (
-                  <div
-                    key={task.batchId || task.id}
-                    onClick={() => setDetailTask({ tasks: batch, recipients })}
-                    className="flex items-center gap-2 sm:gap-4 p-3 sm:p-4 rounded-xl glass-card border-none cursor-pointer hover:bg-white/5 transition-colors"
-                  >
-                    <div className={`w-1 h-10 rounded-full shrink-0 ${allDistributed ? 'bg-emerald-400' : 'bg-yellow-400'}`} />
+                  <div key={task.id} className="flex items-center gap-4 p-4 rounded-xl glass-card border-none">
+                    <div className={`w-1 h-10 rounded-full ${task.delegation_status === 'distributed' ? 'bg-emerald-400' : 'bg-yellow-400'}`} />
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-sm truncate">{task.title}</p>
                       <p className="text-xs text-muted-foreground truncate">{task.description}</p>
