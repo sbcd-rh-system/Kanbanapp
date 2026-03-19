@@ -131,7 +131,7 @@ export default function Profile() {
     try {
       const updated = {
         ...currentUser,
-        phone: form.phone || null,
+        phone: form.phone || undefined,
         linkedin_url: form.linkedinUrl,
         linkedin_photo: form.linkedinPhoto,
         avatar: getAvatarUrl(),
